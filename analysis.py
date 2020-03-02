@@ -77,4 +77,8 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 seasonal_decompose(train_1,period = 6*24*).seasonal
-    
+
+#%% correlation
+train_label_1 = train_label_1.drop(columns='id')
+columns = train_label_1.columns
+corr = train_label_1[columns].corr()

@@ -7,6 +7,11 @@ Created on Sun Mar  1 21:24:21 2020
 
 import pandas as pd
 import numpy as np
+try:
+    import cPickle as pickle
+except BaseException:
+    import pickle
+import os
 
 def load_dataset(path):
     train = pd.read_csv(path+'train.csv')
@@ -57,3 +62,16 @@ def make_day_label(label):
         tmp = label.iloc[:,i].values
         label_conv.append(np.reshape(tmp,(-1,144)))
     return label_conv
+
+def save_obj(obj, name):
+    try:
+        with open('trials/'+ name + '.pkl', 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    except FileNotFoundError:
+        os.mkdir('trials')
+        with open('trials/'+ name + '.pkl', 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)        
+
+def load_obj(name):
+    with open('trials/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
