@@ -39,9 +39,8 @@ def plot_features(data, features, days):
     plt.legend(features)
     plt.xlabel('time')
 
-plot_feature(train_label_2, 'Y18',range(3))
-
-plt.
+#%%
+plot_feature(train_1, 'X00',range(30))
 
 # plot_feature_2(train_1, 'X09',range(10,20))
 
@@ -49,18 +48,15 @@ plot_features(train_1, train_1.columns[12:15], [17, 18])
 
 plot_features(train_label_1, train_label_1.columns[1:10], range(5))
 
-#%% Y 보기
-for i in range(24*6*30,24*6*33):
-    print(i,':',train.Y18[i])
 
-    
+
 #%% 모든 feature들 n일간
 for feature in train_1.columns[1:]:
-    plot_feature(train_1,feature ,range(0,10))
+    plot_feature(train_1,feature ,range(0,30))
 
 #%% 
 for feature in train_label_1.columns[1:]:
-    plot_feature(train_label_1,feature ,range(10))
+    plot_feature(train_label_1,feature ,range(30))
 
 #%% Y18 확인
 
@@ -76,4 +72,9 @@ for feature in test.columns[1:]:
 from IPython import get_ipython
 # get_ipython().run_line_magic('matplotlib', 'qt')
 get_ipython().run_line_magic('matplotlib', 'inline')
+
+#%% Seasonality removal
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+seasonal_decompose(train_1,period = 6*24*).seasonal
     
