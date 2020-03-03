@@ -40,13 +40,14 @@ def plot_features(data, features, days):
     plt.xlabel('time')
 
 #%%
-plot_feature(train_1, 'X00',range(30))
+plot_feature(train_label_1, 'Y02',range(2))
+plot_feature(train_label_2, 'Y18',range(30,32))
 
 # plot_feature_2(train_1, 'X09',range(10,20))
 
 plot_features(train_1, train_1.columns[12:15], [17, 18])
 
-plot_features(train_label_1, train_label_1.columns[1:10], range(5))
+plot_features(train_label_2, train_label_1.columns[1:10], range(5))
 
 
 
@@ -56,7 +57,7 @@ for feature in train_1.columns[1:]:
 
 #%% 
 for feature in train_label_1.columns[1:]:
-    plot_feature(train_label_1,feature ,range(30))
+    plot_feature(train_label_1,feature ,range(2))
 
 #%% Y18 확인
 
@@ -76,7 +77,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 #%% Seasonality removal
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-seasonal_decompose(train_1,period = 6*24*).seasonal
+seasonal_decompose(train_1, period = 6*24*).seasonal
 
 #%% correlation
 train_label_1 = train_label_1.drop(columns='id')

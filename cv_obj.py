@@ -40,7 +40,6 @@ class HPOpt(object):
            # 'criterion': hp.choice('criterion', ["gini", "entropy"]),
            'random_state' : self.random_state,
            }
-        self.space = {'max_depth': hp.choice('max_depth', range(10,200,10))}
     
     def svr(self):
         self.space = {'kernel': hp.choice('kernel',['linear', 'rbf','poly']),
