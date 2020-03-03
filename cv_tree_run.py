@@ -12,13 +12,15 @@ import argparse
 def parameter_setting(config):
     # LightGBM parameters
     lgb_reg_params = {
-        'learning_rate':    hp.choice('learning_rate',    np.arange(0.05, 0.31, 0.05)),
-        'max_depth':        hp.choice('max_depth',        np.arange(5, 16, 1, dtype=int)),
-        'min_child_weight': hp.choice('min_child_weight', np.arange(1, 8, 1, dtype=int)),
-        'colsample_bytree': hp.choice('colsample_bytree', np.arange(0.3, 0.8, 0.1)),
-        'subsample':        hp.uniform('subsample', 0.8, 1),
-        'n_estimators':     config['num_boost_round'],
-        'seed':             config['seed'],
+        'learning_rate':            hp.choice('learning_rate',    np.arange(0.05, 0.3, 0.05)),
+        'max_depth':                hp.choice('max_depth',        np.arange(10, 30, 1, dtype=int)),
+        'num_leaves':               hp.choice('num_leaves',       np.arange(10,150,dtype=int)),
+        'reg_alpha':                hp.uniform('reg_alpha',0.0,100.0),
+        'reg_lambda':               hp.uniform('reg_lambda',0.0,100.0),
+        'min_child_weight':         hp.choice('min_child_weight', np.arange(1, 8, 1, dtype=int)),
+        'colsample_bytree':         hp.choice('colsample_bytree', np.arange(0.3, 0.8, 0.1)),
+        'colsample_bynode':		hp.uniform('colsample_bynode',0.1,1.0),
+        'subsample':                hp.uniform('subsample', 0.1, 1),
     }
     lgb_fit_params = { ### Not used
         'eval_metric': 'custom',
