@@ -41,6 +41,9 @@ class HPOpt_cv(object):
         return result, trials
 
     def lgb_reg(self, para):
+        # make param to int
+        para['reg_params'] = make_param_int(para['reg_params'], ['max_depth','num_leaves','min_data_in_leaf',
+                                     'min_child_weight','bagging_freq','max_bin'])
         reg = lgb.LGBMRegressor(**para['reg_params'])
         return self.train_reg(reg, para)
 

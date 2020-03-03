@@ -82,3 +82,9 @@ def lgb_eval_function(pred, train):
     # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
     score = np.average(np.average(less_then_one ** 2, axis = 0))
     return 'custom_mse', score, False
+
+def make_param_int(param, key_names):
+    for key, value in param.items():
+        if key in key_names:
+            param[key] = int(param[key])
+    return param
