@@ -22,9 +22,10 @@ args = parser.parse_args()
 # load raw data
 train_1, _, train_label_1, _, _, _ = load_dataset('data_raw/')
 train_1['time'] = train_1['id'] % 144
+# train_1= train_1.filter(['X00','X01','X05','X06','X07','X08','X09','X12','X20','X22','X23','X27','X28','X29','X30','X31','X32','X33','X37','X38'],axis=1) # discard zero features
 # train_2['time'] = train_2['id'] % 144
 train_label_1 = train_label_1.drop(columns='id')
-train_1 = train_1.drop(columns='id')
+# train_1 = train_1.drop(columns='id')
 
 # training phase
 bayes_trials_1 = Trials()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Mar  2 22:44:55 2020
 
@@ -35,7 +34,7 @@ class HPOpt(object):
     
     def rf(self):
         self.space =  {'max_depth': hp.choice('max_depth', range(10,200,10)),
-           'max_features': hp.choice('max_features', range(10,40)),
+            'max_features': hp.choice('max_features', range(3,40)),
            'n_estimators': hp.choice('n_estimators', range(100,1000,10)),
            # 'criterion': hp.choice('criterion', ["gini", "entropy"]),
            'random_state' : self.random_state,
