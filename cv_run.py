@@ -30,7 +30,7 @@ train_1 = train_1.drop(columns='id')
 bayes_trials_1 = Trials()
 obj = HPOpt(args.random_state, args.clf_type)
 opt = obj.process(fn_name=args.clf_type+'_cv',train_set = (train_1, train_label_1),nfolds=args.nfolds,
-                trials=bayes_trials_1, algo=tpe.suggest, max_evals=10)# args.max_evals)
+                trials=bayes_trials_1, algo=tpe.suggest, max_evals=args.max_evals)
 
 # save trials
 save_obj(bayes_trials_1,args.filename)
