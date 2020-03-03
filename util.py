@@ -75,3 +75,10 @@ def save_obj(obj, name):
 def load_obj(name):
     with open('trials/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
+    
+def lgb_eval_function(pred, train):
+    diff = abs(pred - train)
+    less_then_one = np.where(diff < 1, 0, diff)
+    # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
+    score = np.average(np.average(less_then_one ** 2, axis = 0))
+    return 'custom_mse', score, False
