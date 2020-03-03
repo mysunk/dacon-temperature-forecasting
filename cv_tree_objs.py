@@ -58,4 +58,4 @@ class HPOpt_cv(object):
                 pred = model.predict(x_test)
                 loss = para['loss_func'](y_test, pred)
                 losses.append(loss)
-        return {'loss': np.mean(losses,axis=0), 'status': STATUS_OK}
+        return {'loss': np.mean(losses,axis=0),'params':para ,'status': STATUS_OK}

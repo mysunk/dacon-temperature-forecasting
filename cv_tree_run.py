@@ -12,21 +12,38 @@ import argparse
 def parameter_setting(config):
     # LightGBM parameters
     lgb_reg_params = {
-        'learning_rate':            hp.choice('learning_rate',    np.arange(0.005, 0.3, 0.001)),
-        'max_depth':                hp.choice('max_depth',        np.arange(10, 200, 1, dtype=int)),
-        'num_leaves':               hp.choice('num_leaves',       np.arange(2,30,dtype=int)),
-        'min_data_in_leaf':		hp.choice('min_data_in_leaf',	np.arange(10,300,10,dtype=int)),	
+        'learning_rate':            hp.uniform('learning_rate',    0.05, 0.3),
+        'max_depth':                hp.quniform('max_depth',        10, 200, 1),
+        'num_leaves':               hp.quniform('num_leaves',       2, 30, 1),
+        'min_data_in_leaf':		hp.quniform('min_data_in_leaf',	10, 300, 10),	
         'reg_alpha':                hp.uniform('reg_alpha',0.0,100.0),
         'reg_lambda':               hp.uniform('reg_lambda',0.0,100.0),
-        'min_child_weight':         hp.choice('min_child_weight', np.arange(1, 10, 1, dtype=int)),
-        'colsample_bytree':         hp.choice('colsample_bytree', np.arange(0.1, 1.0, 0.01)),
+        'min_child_weight':         hp.quniform('min_child_weight', 1, 10, 1),
+        'colsample_bytree':         hp.uniform('colsample_bytree', 0.1, 1.0)),
         'colsample_bynode':		hp.uniform('colsample_bynode',0.1,1.0),
-        'bagging_freq':			hp.choice('bagging_freq',	np.arange(1,10,1,dtype=int)),
+        'bagging_freq':			hp.quniform('bagging_freq',	1,10,1),
 	'tree_learner':			hp.choice('tree_learner',	['serial','feature','data','voting']),
         'subsample':                hp.uniform('subsample', 0.1, 1),
         'boosting':			hp.choice('boosting', ['gbdt','rf','dart']),
-        'max_bin':			hp.choice('max_bin',		np.arange(10,300,10)),
+        'max_bin':			hp.quniform('max_bin',		10,300,10),
     }
+    lgb_reg_params = {
+        'learning_rate':            hp.uniform('learning_rate',    0.05, 0.3),
+        'max_depth':                hp.quniform('max_depth',        180, 300, 1),
+        'num_leaves':               hp.quniform('num_leaves',       2, 20, 1),
+        'min_data_in_leaf':		hp.quniform('min_data_in_leaf',	10, 100),	
+        'reg_alpha':                hp.uniform('reg_alpha',10.0,20.0),
+        'reg_lambda':               hp.uniform('reg_lambda',80.0,100.0),
+        'min_child_weight':         hp.quniform('min_child_weight', 1, 10, 1),
+        'colsample_bytree':         hp.uniform('colsample_bytree', 0.9, 1.0)),
+        'colsample_bynode':		hp.uniform('colsample_bynode',0.9,1.0),
+        'bagging_freq':			hp.quniform('bagging_freq',	5,10,1),
+	'tree_learner':			hp.choice('tree_learner',	['serial','feature','data','voting']),
+        'subsample':                hp.uniform('subsample', 0.8, 1),
+        'boosting':			hp.choice('boosting', ['gbdt','rf','dart']),
+        'max_bin':			hp.quniform('max_bin',		200,300),
+    }
+    
     lgb_fit_params = { ### Not used
         'eval_metric': 'custom',
         'early_stopping_rounds': 10,

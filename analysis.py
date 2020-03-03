@@ -83,3 +83,7 @@ seasonal_decompose(train_1, period = 6*24*).seasonal
 train_label_1 = train_label_1.drop(columns='id')
 columns = train_label_1.columns
 corr = train_label_1[columns].corr()
+
+#%% load pkl result
+
+trials = load_obj('lgb_10fold_3')
