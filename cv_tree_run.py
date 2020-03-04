@@ -5,7 +5,7 @@ Created on Tue Feb 25 14:40:43 2020
 @author: mskim
 """
 from cv_tree_objs import *
-from hyperopt import fmin, tpe, STATUS_OK, STATUS_FAIL, Trials
+from hyperopt import fmin, tpe, STATUS_OK, STATUS_FAIL, Trials, hp
 from util import *
 import argparse
 
@@ -31,7 +31,7 @@ def parameter_setting(config):
         'learning_rate':            hp.uniform('learning_rate',    0.05, 0.3),
         'max_depth':                hp.quniform('max_depth',        180, 300, 1),
         'num_leaves':               hp.quniform('num_leaves',       2, 20, 1),
-        'min_data_in_leaf':		hp.quniform('min_data_in_leaf',	10, 100),	
+        'min_data_in_leaf':		hp.quniform('min_data_in_leaf',	10, 100,1),	
         'reg_alpha':                hp.uniform('reg_alpha',10.0,20.0),
         'reg_lambda':               hp.uniform('reg_lambda',80.0,100.0),
         'min_child_weight':         hp.quniform('min_child_weight', 1, 10, 1),
@@ -41,7 +41,7 @@ def parameter_setting(config):
 	'tree_learner':			hp.choice('tree_learner',	['serial','feature','data','voting']),
         'subsample':                hp.uniform('subsample', 0.8, 1),
         'boosting':			hp.choice('boosting', ['gbdt','rf','dart']),
-        'max_bin':			hp.quniform('max_bin',		200,300),
+        'max_bin':			hp.quniform('max_bin',	200,300,1),
     }
     
     lgb_fit_params = { ### Not used
@@ -79,7 +79,8 @@ if __name__ == '__main__':
     bayes_trials_1 = Trials()
     lgb_para = parameter_setting(config)
     obj = HPOpt_cv(train, train_label, config)
-    lgb_opt = obj.process(fn_name='lgb_reg', space=lgb_para, trials=bayes_trials_1, algo=tpe.suggest, max_evals=args.max_evals)
+    tuning_algo = tpe.suggest # tpe.rand.sugggest -- random search
+    lgb_opt = obj.process(fn_name='lgb_reg', space=lgb_para, trials=bayes_trials_1, algo=tuning_algo, max_evals=args.max_evals)
     
     # save trial
     save_obj(bayes_trials_1,args.filename)
