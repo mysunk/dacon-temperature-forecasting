@@ -14,8 +14,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.multioutput import MultiOutputRegressor
 
-
-
 class HPOpt(object):
     
     def __init__(self, random_state, clf_name):
@@ -26,9 +24,9 @@ class HPOpt(object):
     
     # parameter setting
     def eln(self):
-        self.space =  {'max_iter': hp.choice('max_iter',np.arange(1000,10000,step=100,dtype=int)),
+        self.space =  {'max_iter': hp.choice('max_iter',np.arange(100, 10000,1)),
              "alpha": hp.loguniform('alpha',np.log(0.0001),np.log(1000)),
-             'l1_ratio':hp.choice('l1_ratio',np.arange(0.0, 1.0, 0.1)),
+             'l1_ratio':hp.uniform('l1_ratio',0.0, 1.0),
              'random_state' : self.random_state,
              }
     
@@ -60,9 +58,11 @@ class HPOpt(object):
     
     # objective function
     def eln_cv(self, params, train_set, nfolds):
+        params['max_iter'] = int(params['max_iter'])
         model = ElasticNet(**params)
         score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
+        # print(cv_results)
         cv_loss = np.mean(cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
@@ -82,3 +82,21 @@ class HPOpt(object):
         cv_loss = np.mean(cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
+
+"""
+train = np.load('data_npy/train_pred_2.npy')
+train = train[:,0].reshape(-1,1)
+_, _, _, train_label, _, _ = load_dataset('data_raw/')
+# train_1['time'] = train_1['id'] % 144
+# train_2['time'] = train_2['id'] % 144
+# train_label_1 = train_label_1.drop(columns='id')
+# train_1 = train_1.drop(columns='id')
+train_label = train_label.drop(columns='id')
+train_set = (train, train_label.values)
+nfolds = 10
+params = dict()
+model = ElasticNet(**params)
+score= make_scorer(mse_AIFrenz, greater_is_better=True)
+model.fit(train_set[0], train_set[1])
+pred = model.predict(train_set[0])
+"""

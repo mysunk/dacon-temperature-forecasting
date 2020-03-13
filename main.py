@@ -72,7 +72,7 @@ oob_pred = np.mean(oob_pred,axis=1)
 # =============================================================================
 # predict train_2
 # =============================================================================
-"""
+
 oof_pred = []
 # Second train phase
 for i in range(nfold):
@@ -82,7 +82,7 @@ for i in range(nfold):
     oof_pred.append(y_pred)
 oof_pred = np.mean(oof_pred,axis=0)
 np.save('result/train_2_pred',oof_pred)
-"""
+
 # =============================================================================
 # Apply stack result
 # =============================================================================

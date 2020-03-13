@@ -12,6 +12,7 @@ try:
 except BaseException:
     import pickle
 import os
+from configparser import ConfigParser
 
 def load_dataset(path):
     train = pd.read_csv(path+'train.csv')
@@ -25,22 +26,21 @@ def load_dataset(path):
     train_label_1.insert(0,'id',train.id[:24*6*30])
     train_label_2 = train.iloc[24*6*30:,-1] # 3일간 Y18
     train_label_2 = pd.concat( [train.id[24*6*30:],train_label_2], axis=1)
-    
     return train_1, train_2, train_label_1, train_label_2, test, sample
 
-def mse_AIFrenz(y_true, y_pred):
+def mse_AIFrenz(y_pred, train_data):
     '''
     y_true: 실제 값
     y_pred: 예측 값
     '''
+    y_true = train_data.get_label()
     diff = abs(y_true - y_pred)
-    
+
     less_then_one = np.where(diff < 1, 0, diff)
     
     # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
     score = np.average(np.average(less_then_one ** 2, axis = 0))
-    
-    return score
+    return 'mse_modified', score, False
 
 def make_day_sample(data):
     if 'id' in data.columns:

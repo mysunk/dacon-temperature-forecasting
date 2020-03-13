@@ -14,14 +14,15 @@ parser = argparse.ArgumentParser(description='Fit configuration',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--max_evals", default=1000, type=int)
 parser.add_argument("--random_state", default=0, type=int)
-parser.add_argument("--nfolds", default=144, type=int)
-parser.add_argument("--filename", default='eln_144fold_1', type=str)
-parser.add_argument("--clf_type", default='eln', type=str)
+parser.add_argument("--nfolds", default=432, type=int)
+parser.add_argument("--filename", default='rf_144fold_1', type=str)
+parser.add_argument("--clf_type", default='rf', type=str)
 args = parser.parse_args()
 
 # load raw data
 
-train = np.load('result/train_2_pred.npy')
+train = np.load('data_npy/train_pred_2.npy')
+train = train[:,0].reshape(-1,1)
 _, _, _, train_label, _, _ = load_dataset('data_raw/')
 # train_1['time'] = train_1['id'] % 144
 # train_2['time'] = train_2['id'] % 144

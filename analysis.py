@@ -5,12 +5,10 @@ Created on Sun Mar  1 22:25:48 2020
 @author: guseh
 """
 from util import *
+import pandas as pd
 import matplotlib.pyplot as plt
 
-train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
-
-#%% columns
-train.columns
+# train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
 
 #%% 하루 단위로
 def plot_feature(data, feature_name, days):
@@ -40,12 +38,16 @@ def plot_features(data, features, days):
     plt.xlabel('time')
 
 #%%
-plot_feature(train_label_1, 'Y02',range(2))
+plot_feature(train_label_1, 'Y02',range(30))
 plot_feature(train_label_2, 'Y18',range(30,32))
 
-# plot_feature_2(train_1, 'X09',range(10,20))
+plot_feature_2(train_1, 'X00',range(2))
+plot_feature_2(train_1, 'X01',range(2))
 
-plot_features(train_1, train_1.columns[12:15], [17, 18])
+
+
+plot_features(train_2, ['X00','X07','X28','X31','X32'], range(3))
+
 
 plot_features(train_label_2, train_label_1.columns[1:10], range(5))
 
@@ -85,5 +87,34 @@ columns = train_label_1.columns
 corr = train_label_1[columns].corr()
 
 #%% load pkl result
+from util import *
+trials = load_obj('lgb_144fold_6')
+best = trials.best_trial['result']['params']
 
-trials = load_obj('lgb_10fold_3')
+#%%
+train_1 = pd.read_csv('data_npy/train_1.csv')
+train_2 = pd.read_csv('data_npy/train_2.csv')
+train_label_1 = pd.read_csv('data_npy/train_label_1.csv')
+train_label_2 = pd.read_csv('data_npy/train_label_2.csv')
+test = pd.read_csv('data_npy/test.csv')
+
+#%% 온도
+plot_feature_2(train_1, 'X09',range(3))
+
+#%%
+a = [1,2,3]
+
+#%% 온도
+plot_features(train_1, ['X00','X07','X28','X31','X32'], range(4))
+plot_features(train_2, ['X00','X07','X28','X31','X32'], range(4))
+plot_features(test, ['X00','X07','X28','X31','X32'], range(4))
+
+#%% label
+plot_features(train_label_1, ['Y16'], range(4))
+plot_features(train_label_2, ['Y18'], range(4))
+
+#%% similarity
+similarity = np.zeros((30,3))
+for i in range(30):
+    for j in range(3):
+        similarity[i,j] = np.linalg.norm(train.iloc[i].values-test.iloc[j].values)
