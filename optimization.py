@@ -34,7 +34,7 @@ def lgb_space(fit_params):
         'n_jobs':                   -1,
     }
     lgb_fit_params = {
-        'feval':                    mse_AIFrenz,
+        'feval':                    mse_AIFrenz_lgb,
         'num_boost_round':          fit_params['num_boost_round'],
         'early_stopping_rounds':    fit_params['early_stopping_rounds'], 
         'verbose_eval':             fit_params['verbose_eval'],
@@ -42,7 +42,7 @@ def lgb_space(fit_params):
     lgb_para = dict()
     lgb_para['reg_params'] = lgb_reg_params
     lgb_para['fit_params'] = lgb_fit_params
-    lgb_para['loss_func' ] = mse_AIFrenz
+    lgb_para['loss_func' ] = mse_AIFrenz_lgb
     return lgb_para
 
 def xgb_space(self):

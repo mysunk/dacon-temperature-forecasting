@@ -28,7 +28,34 @@ def load_dataset(path):
     train_label_2 = pd.concat( [train.id[24*6*30:],train_label_2], axis=1)
     return train_1, train_2, train_label_1, train_label_2, test, sample
 
-def mse_AIFrenz(y_pred, train_data):
+def add_profile(data, feature_names):
+    
+    profiles = []
+    for f in feature_names:
+        profile = pd.DataFrame(data.loc[:,[f]])
+        profile = np.reshape(profile.values, (-1,6*24)) # 하루치
+        profiles.append(profile)
+    
+    profile = np.concatenate(profiles,axis=1)
+    
+    for i in range(1,(int)(data.shape[0]/144)): # 첫 날은 제외
+        new_data = pd.concat([data.iloc[i*144:(i+1)*144].reset_index(drop=True), pd.DataFrame(np.tile(profile[i-1,:], (144, 1)))],axis=1)
+        if i==1:
+            train_1_p = new_data
+        else:
+            train_1_p = pd.concat([train_1_p,new_data],axis=0)
+    return train_1_p
+
+def add_profile_v2(data, features, N):
+    new = data.iloc[N:,:].reset_index() # 앞에 N개 자름
+    additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
+    print(new.shape)
+    for i in range(N,data.shape[0]):
+        additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
+    new = pd.concat([new, additional],axis=1)
+    return new
+
+def mse_AIFrenz_lgb(y_pred, train_data): # custom score function
     '''
     y_true: 실제 값
     y_pred: 예측 값
@@ -41,6 +68,21 @@ def mse_AIFrenz(y_pred, train_data):
     # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
     score = np.average(np.average(less_then_one ** 2, axis = 0))
     return 'mse_modified', score, False
+
+def mse_AIFrenz(y_true, y_pred):
+    '''
+    y_true: 실제 값
+    y_pred: 예측 값
+    '''
+    diff = abs(y_true - y_pred)
+    
+    less_then_one = np.where(diff < 1, 0, diff)
+    
+    # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
+    score = np.average(np.average(less_then_one ** 2, axis = 0))
+    
+    return score
+
 
 def make_day_sample(data):
     if 'id' in data.columns:

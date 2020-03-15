@@ -88,7 +88,7 @@ corr = train_label_1[columns].corr()
 
 #%% load pkl result
 from util import *
-trials = load_obj('lgb_144fold_6')
+trials = load_obj('tmp')
 best = trials.best_trial['result']['params']
 
 #%%
@@ -118,3 +118,12 @@ similarity = np.zeros((30,3))
 for i in range(30):
     for j in range(3):
         similarity[i,j] = np.linalg.norm(train.iloc[i].values-test.iloc[j].values)
+
+#%%
+import matplotlib.pyplot as plt
+plt.plot(train_label_1[:2000])
+# plt.plot(train_label_1[:2000])
+plt.plot(train_label_1_ref.loc[:2000,'Y16'])
+
+# plt.figure()
+plt.plot(train_label_2)

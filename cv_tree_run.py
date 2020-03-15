@@ -10,7 +10,6 @@ from util import *
 import argparse
 from regression import *
 
-
 def parsing(file_name, method):
     config = ConfigParser()
     config.read(file_name)
@@ -22,6 +21,7 @@ def parsing(file_name, method):
     data_params['filename'] = config.get('data', 'filename')
     data_params['max_evals'] = config.getint('data', 'max_evals')
     data_params['nfold'] = config.getint('data', 'nfold')
+    data_params['N'] = config.getint('data', 'N')
     
     # load clf params
     reg_params = {}
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # load config
     parser = argparse.ArgumentParser(description='Dacon temperature regression',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--ini_file', default='tuning_y10')
+    parser.add_argument('--ini_file', default='tuning')
     parser.add_argument('--method', default='lgb', choices=['lgb', 'xgb', 'ctb'])
     args = parser.parse_args()
     data_params, model_params = parsing('./config/'+args.ini_file+'.ini', args.method)
@@ -64,6 +64,22 @@ if __name__ == '__main__':
     else:train = np.load(data_params['train_dataset'])
     if data_params['target_dataset'][-3:] == 'csv': train_label = pd.read_csv(data_params['target_dataset'])
     else: train_label = np.load(data_params['target_dataset'])
+    
+    # load dataset -- 다시
+    train = pd.read_csv('data_raw/train.csv')
+    test = pd.read_csv('data_raw/test.csv')
+
+    # split data and label
+    train = train.loc[:,'id':'X39']
+    train['time'] = train.id.values % 144
+    train = train.drop(columns = 'id')
+    train_label = pd.read_csv('data_npy/Y_18.csv')
+    
+    # declare dataset
+    N = data_params['N']
+    train = add_profile_v2(train, ['X00'],N) # 기온만 추가
+    # train = train.iloc[144:,:]
+    train_label = train_label[N:]
     
     # main
     if data_params['analysis_type'] == 'tuning':
@@ -111,4 +127,26 @@ for i in range(18):
     Y_18 = np.ravel(Y_18)
     
     print(i,'th correlation is',np.corrcoef(sensor, Y_18)[1,0])
+"""
+#%%
+"""
+# test 만들기
+test = pd.read_csv('data_raw/test.csv')
+test = test.loc[:,'id':'X39']
+test['time'] = test.id.values % 144
+test = test.drop(columns = 'id')
+
+train = pd.read_csv('data_raw/train.csv')
+train = train.loc[:,'id':'X39']
+train['time'] = train.id.values % 144
+train = train.drop(columns = 'id')
+test = add_profile_v2(pd.concat([train.iloc[-144:,:],test],axis=0),['X00'])
+y_pred = obj.predict(test)
+
+ref = pd.read_csv('submit/sample_submission_v7.csv')
+
+mse_AIFrenz(ref.Y18, y_pred)
+
+ref['Y18'] = y_pred
+ref.to_csv('submit/submit_3.csv',index=False)
 """

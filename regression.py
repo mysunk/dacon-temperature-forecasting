@@ -33,7 +33,7 @@ def lgb_params(params):
         'n_jobs':                   -1,
     }
     lgb_fit_params = {
-        'feval':                    mse_AIFrenz,
+        'feval':                    mse_AIFrenz_lgb,
         'num_boost_round':          params['fit_params']['num_boost_round'],
         'early_stopping_rounds':    params['fit_params']['early_stopping_rounds'], 
         'verbose_eval':             params['fit_params']['verbose_eval'],
@@ -41,7 +41,7 @@ def lgb_params(params):
     lgb_para = dict()
     lgb_para['reg_params'] = lgb_reg_params
     lgb_para['fit_params'] = lgb_fit_params
-    lgb_para['loss_func' ] = mse_AIFrenz
+    lgb_para['loss_func' ] = mse_AIFrenz_lgb
     return lgb_para
 
 class lgb_net(object):
@@ -95,7 +95,9 @@ class lgb_net(object):
             model = lgb.train(self.param['reg_params'], train_set = dtrain,  
                               valid_sets=[dtrain, dvalid], **self.param['fit_params'])
             self.models.append(model)
-            pred[test_index]= model.predict(x_test)   
+            # print(model.predict(x_test).shape)
+            pred[test_index,0]= model.predict(x_test)
+            
         return pred
     
     def predict(self, test): # for new test samples

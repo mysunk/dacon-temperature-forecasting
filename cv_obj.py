@@ -64,6 +64,7 @@ class HPOpt(object):
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         # print(cv_results)
         cv_loss = np.mean(cv_results)
+        print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
@@ -72,14 +73,16 @@ class HPOpt(object):
         score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         cv_loss = np.mean(cv_results)
+        print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
     def svr_cv(self, params, train_set, nfolds):
-        model = MultiOutputRegressor(SVR(**params), n_jobs=-1)
+        model =SVR(**params)
         score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         cv_loss = np.mean(cv_results)
+        print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
 
