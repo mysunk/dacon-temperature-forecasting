@@ -13,12 +13,12 @@ train = pd.read_csv('data_raw/train.csv')
 test = pd.read_csv('data_raw/test.csv')
 
 # preprocessing
-train = train.drop(columns = ['X11','X14','X16','X19','X34'])
+# train = train.drop(columns = ['X11','X14','X16','X19','X34'])
 test = test.drop(columns = ['X11','X14','X16','X19','X34'])
 
 # split data and label
-train_1 = train.loc[:24*6*30-1,'X00':'X38']
-train_2 = train.loc[24*6*30:,'X00':'X38']
+train_1 = train.loc[:24*6*30-1,'X00':'X39']
+train_2 = train.loc[24*6*30:,'X00':'X39']
 
 train_label_1_ref = train.loc[:24*6*30-1,'Y00':'Y17']
 train_label_1 = pd.read_csv('data_npy/Y_18.csv')
@@ -92,3 +92,19 @@ train_label_1_Y16.to_csv('data_npy/train_label_1_Y16.csv',index=False)
 
 train_label_1_Y17 = train_label_1.loc[:,'Y17']
 train_label_1_Y17.to_csv('data_npy/train_label_1_Y17.csv',index=False)
+
+#%%
+import matplotlib.pyplot as plt
+plt.plot(train_label_1)
+plt.plot(train_label_1_ref.loc[:,'Y16'])
+plt.plot(train_label_1_ref.loc[:,'Y17'])
+
+plt.legend(['sw','Y16','Y17'])
+
+#%%
+plt.figure
+plt.plot(train.loc[:,'X00'])
+
+#%%
+plt.figure
+plt.plot(test.loc[:,'X00'])

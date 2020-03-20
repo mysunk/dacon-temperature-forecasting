@@ -5,103 +5,101 @@ Created on Tue Mar  3 13:19:59 2020
 @author: guseh
 """
 from util import *
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import KFold
+from sklearn.metrics import make_scorer
+# clf
+from sklearn.ensemble import RandomForestRegressor
+import lightgbm as lgb
 
-
-# =============================================================================
-# Learn train_1 by cv result
-# =============================================================================
-
-# load cv result
-trials = load_obj('rf_10fold_2')
-print(trials.best_trial['result']['params'])
-
-# example
-param = {'max_depth':180,
-    'max_features':26,
-    'n_estimators':370,
-    'random_state': 0
+def lgb_param():
+    lgb_param = {
+        'bagging_freq' :            2,
+        'boosting' :                'gbdt',
+        'colsample_bynode' :        0.5614113707540148,
+        'colsample_bytree' :        0.5236228311328034,
+        'learning_rate' :           0.11074930666097238,
+       ' max_bin' :                 100,
+        'max_depth' :               10,
+        'min_child_weight' :        4,
+        'min_data_in_leaf' :        30,
+        'num_leaves' :              20,
+        'reg_alpha' :               0.0346297125460458,
+        'reg_lambda':               3.641221146386232,
+        'subsample':                0.891312377550311,
+        'tree_learner':             'feature',
+        'random_state':             0,
+        'n_jobs':                   -1,
     }
+    return lgb_param
 
-# load raw data
-train_1, train_2, train_label_1, train_label_2, test, submit = load_dataset('data_raw/')
-train_1['time'] = train_1['id'] % 144
-train_2['time'] = train_2['id'] % 144
-test['time'] = test['id'] % 144
+def eln_param():
+    eln_param =  {
+        'max_iter':                 10,
+         "alpha":                   1,
+         'l1_ratio':                0.1,
+         'random_state' :           0,
+         }
 
-train_label_1 = train_label_1.drop(columns='id')
-train_label_2 = train_label_2.drop(columns='id')
+def rf_param(self):
+    rf_param =  {
+        'max_depth':                10,
+        'max_features':             10,
+        'n_estimators':             100,
+        #'criterion':               hp.choice('criterion', ["gini", "entropy"]),
+        'random_state' :            0,
+       }
 
-# train-test split
-nfold=10
-skf = KFold(n_splits=nfold, random_state=None, shuffle=False)
+def svr_param(self):
+    svr_param = {
+        'kernel':                   'linear',
+        'C':                        1,
+        'gamma':                    1e-3,
+        'epsilon':                  0.2,
+        'random_state' :           0,
+        }
 
-oof_loss = np.zeros((nfold,2)) # train loss and val loss
-oof_pred = np.zeros(train_label_1.shape)
-oob_pred = [[np.zeros((test.shape[0],train_label_1.shape[1]))]]
-models = []
-
-train = train_1
-train_label = train_label_1
-
-# First train phase
-for i, (train_index, test_index) in enumerate(skf.split(train, train_label)):
+# def tmps():
+if __name__ == '__main__':
+    # load cv result
+    param = lgb_param() # pre-defined param
+    trials = load_obj('lgb_0320_3')
+    # param = trials.best_trial['result']['params']
+    # param = trials.results['result']['params']
+    param =trials[30]['params'] # 68, 30, 67
+     ####'lgb_0320_3 의 30번째, 3000번 -- 2.67나옴
+    # load dataset
+    train = pd.read_csv('data_raw/train.csv')
+    test = pd.read_csv('data_raw/test.csv')
+    train_label = pd.read_csv('data_npy/Y_18.csv')
+    
+    # split data and label
+    train = train.loc[:,'id':'X39']
+    train['time'] = train.id.values % 144
+    train = train.drop(columns = 'id')
+    test = test.loc[:,'id':'X39']
+    test['time'] = test.id.values % 144
+    test = test.drop(columns = 'id')
+    
+    # declare dataset
+    N = 3
+    train_label = train_label[N:]
+    train_partial = train.iloc[-N:,:] # 뒤의 N개 잘라내서 저장
+    train = add_profile_v2(train, ['X00', 'X12','X11'],N) # 기온만 추가
+    train = train.drop(columns = 'index')
+    test = pd.concat([train_partial, test], axis=0).reset_index(drop=True)
+    
+    test = add_profile_v2(test,['X00', 'X12','X11'],N)
+    test = test.drop(columns = 'index')
+    # First train phase
+    dtrain = lgb.Dataset(train, label=train_label)
+    model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=3000,verbose_eval=True,
+                                 feval = mse, early_stopping_rounds=10)
+    
+    y_pred = model.predict(test)
+    print('diff with sw is',mse_AIFrenz(ref.Y18.values, y_pred))
+    
+    """ other classifier
+    # rf
     model = RandomForestRegressor(**param)
-    x_train = train.iloc[train_index]
-    y_train = train_label.iloc[train_index]
-    x_test = train.iloc[test_index]
-    y_test = train_label.iloc[test_index]
-    
-    # make classifier
-    model.fit(x_train, y_train)
-    y_pred_test = model.predict(x_test)
-    y_pred_train = model.predict(x_train)
-    
-    # cal loss
-    oof_loss[i] = (mse_AIFrenz(y_train, y_pred_train),mse_AIFrenz(y_test, y_pred_test)) # 순서대로 train, test loss
-    
-    # oof prediction
-    oof_pred[test_index,:] = y_pred_test
-    models.append(model)
-    
-    # oob prediction
-    oob_pred.append(model.predict(test))
-oob_pred = np.mean(oob_pred,axis=1)
-
-# =============================================================================
-# predict train_2
-# =============================================================================
-
-oof_pred = []
-# Second train phase
-for i in range(nfold):
-    # make classifier
-    model = models[i]
-    y_pred = model.predict(train_2)
-    oof_pred.append(y_pred)
-oof_pred = np.mean(oof_pred,axis=0)
-np.save('result/train_2_pred',oof_pred)
-
-# =============================================================================
-# Apply stack result
-# =============================================================================
-trials = load_obj('eln_144fold_1')
-print(trials.best_trial['result']['params'])
-
-# load dataset
-train = np.load('result/train_2_pred.npy')
-
-# example
-param = {'alpha':0.013448014319253621,
-    'l1_ratio':0.7000000000000001,
-    'max_iter':10000,
-    'random_state': 0
-    }
-
-# train model
-model =  ElasticNet(**param)
-model.fit(train, train_label_2)
-result = model.predict(oob_pred)
-submit.iloc[:,1] = result
-submit.to_csv('submit/submit_2.csv',index=False)
+    model.fit(train, train_label)
+    """

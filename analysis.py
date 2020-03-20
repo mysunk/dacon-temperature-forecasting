@@ -88,8 +88,9 @@ corr = train_label_1[columns].corr()
 
 #%% load pkl result
 from util import *
-trials = load_obj('tmp')
+trials = load_obj('tuning_v1')
 best = trials.best_trial['result']['params']
+print(best)
 
 #%%
 train_1 = pd.read_csv('data_npy/train_1.csv')
@@ -127,3 +128,50 @@ plt.plot(train_label_1_ref.loc[:2000,'Y16'])
 
 # plt.figure()
 plt.plot(train_label_2)
+
+#%% correlation
+import numpy as np
+corr = np.corrcoef(np.vstack([train_label_1.loc[:4319,'Y18'].values, train_1.loc[:,'X00'].values]))
+
+#%%
+ref = pd.read_csv('submit/sample_submission_v7.csv')
+mse_AIFrenz(ref.Y18.values, y_pred)
+
+#%%
+interv = range(5000)
+plt.plot(ref.Y18.values[interv])
+plt.plot(trial[interv])
+plt.plot(submit_3.Y18.values[interv])
+plt.plot(test.X00.values[interv])
+plt.legend(['sw','ensemble','prev_submit','X00'])
+#%% 과거 제출값
+submit_3 = pd.read_csv('submit/submit_3.csv')
+submit_3.Y18 = trial
+submit_3.to_csv('submit/submit_4.csv',index=False)
+#%%
+y_pred_2 = y_pred
+#%%
+mean_val = np.mean([y_pred_1, y_pred_2],axis=0)
+
+#%%
+from sklearn.metrics import mean_squared_error
+print('diff with sw is',mean_squared_error(ref.Y18.values, trial))
+print('diff with sw is',mse_AIFrenz(ref.Y18.values, trial))
+
+#%%
+trial = y_pred * 0.7 + ref.Y18.values * 0.3
+
+#%%
+plt.plot(train.X00[:1000])
+plt.plot(train_label_ref.Y16[:1000])
+
+#%%
+interv = range(11000,11500)
+plt.plot(ref.Y18.values[interv])
+plt.plot(y_pred[interv])
+plt.plot(trial[interv])
+plt.plot(test.X00.values[interv],'--')
+plt.legend(['sw','ms','ensemble','T'])
+
+
+

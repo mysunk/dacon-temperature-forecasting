@@ -13,6 +13,7 @@ except BaseException:
     import pickle
 import os
 from configparser import ConfigParser
+from sklearn.metrics import mean_squared_error
 
 def load_dataset(path):
     train = pd.read_csv(path+'train.csv')
@@ -49,9 +50,18 @@ def add_profile(data, feature_names):
 def add_profile_v2(data, features, N):
     new = data.iloc[N:,:].reset_index() # 앞에 N개 자름
     additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
-    print(new.shape)
     for i in range(N,data.shape[0]):
         additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
+    new = pd.concat([new, additional],axis=1)
+    return new
+
+def add_profile_v3(data, features, N):
+    new = data.iloc[N:,:].reset_index() # 앞에 N개 자름
+    additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
+    for i in range(N,data.shape[0]):
+        print(i)
+        # additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
+        additional.iloc[i-1]= data.loc[i-1,features].values # 한줄로 만들어서 옆에 붙임
     new = pd.concat([new, additional],axis=1)
     return new
 
@@ -82,6 +92,17 @@ def mse_AIFrenz(y_true, y_pred):
     score = np.average(np.average(less_then_one ** 2, axis = 0))
     
     return score
+
+def mse(y_pred, train_data): # custom score function
+    '''
+    y_true: 실제 값
+    y_pred: 예측 값
+    '''
+    y_true = train_data.get_label()
+    
+    # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
+    score = mean_squared_error(y_true, y_pred)
+    return 'mse_modified', score, False
 
 
 def make_day_sample(data):
