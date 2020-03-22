@@ -6,7 +6,8 @@ Created on Tue Mar  3 13:19:59 2020
 """
 from util import *
 from sklearn.model_selection import KFold
-from sklearn.metrics import make_scorer
+from sklearn.metrics import make_scorer, mean_squared_error
+
 # clf
 from sklearn.ensemble import RandomForestRegressor
 import lightgbm as lgb
@@ -61,42 +62,86 @@ def svr_param(self):
 # def tmps():
 if __name__ == '__main__':
     # load cv result
-    param = lgb_param() # pre-defined param
-    trials = load_obj('lgb_0320_3')
-    # param = trials.best_trial['result']['params']
-    # param = trials.results['result']['params']
-    param =trials[30]['params'] # 68, 30, 67
-     ####'lgb_0320_3 의 30번째, 3000번 -- 2.67나옴
-    # load dataset
+    # param = lgb_param() # pre-defined param
+    trials = load_obj('trial_0322_7')
+    param = trials[66]['params']
+    param['metric']='l2'
+    
+    # User
+    # profile_feature = ['X00','X01','X02','X04','X05','X11','X12','X13','solar_diff_X11'] 
+    drop_feature = ['id','X14','X16','X19']
+    
+    N = 3
+    nfold = 11
+    
+    #============================================= load & pre-processing ==================================================
+    
     train = pd.read_csv('data_raw/train.csv')
-    test = pd.read_csv('data_raw/test.csv')
+    train = train.loc[:,'id':'X39']
+    # add new features
+    time = train.id.values % 144
+    train['solar_diff_X11'] = irradiance_difference(train.X11.values)
+    train['solar_diff_X34'] = irradiance_difference(train.X34.values)
+    train = train.drop(columns = drop_feature)
+    train_partial = train.iloc[-N:,:] # 뒤의 N개 잘라내서 저장
     train_label = pd.read_csv('data_npy/Y_18.csv')
     
-    # split data and label
-    train = train.loc[:,'id':'X39']
-    train['time'] = train.id.values % 144
-    train = train.drop(columns = 'id')
+    # declare dataset
+    profile_feature = train.columns # time 빼고 전부
+    train['time'] = time
+    train = add_profile_v2(train, profile_feature,N) 
+    train = train.drop(columns='index')
+    train_label = train_label[N:]
+    
+    test = pd.read_csv('data_raw/test.csv')
     test = test.loc[:,'id':'X39']
     test['time'] = test.id.values % 144
-    test = test.drop(columns = 'id')
+    test['solar_diff_X11'] = irradiance_difference(test.X11.values)
+    test['solar_diff_X34'] = irradiance_difference(test.X34.values)
+    test = test.drop(columns =drop_feature )
     
     # declare dataset
-    N = 3
-    train_label = train_label[N:]
-    train_partial = train.iloc[-N:,:] # 뒤의 N개 잘라내서 저장
-    train = add_profile_v2(train, ['X00', 'X12','X11'],N) # 기온만 추가
-    train = train.drop(columns = 'index')
+    
     test = pd.concat([train_partial, test], axis=0).reset_index(drop=True)
-    
-    test = add_profile_v2(test,['X00', 'X12','X11'],N)
+    test = add_profile_v2(test,profile_feature,N)
     test = test.drop(columns = 'index')
-    # First train phase
-    dtrain = lgb.Dataset(train, label=train_label)
-    model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=3000,verbose_eval=True,
-                                 feval = mse, early_stopping_rounds=10)
+    #============================================= load & pre-processing ==================================================
     
-    y_pred = model.predict(test)
-    print('diff with sw is',mse_AIFrenz(ref.Y18.values, y_pred))
+    if nfold==0:
+        dtrain = lgb.Dataset(train, label=train_label)
+        model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=100,verbose_eval=True,
+                                     early_stopping_rounds=10)
+        y_pred = model.predict(test)
+    else:
+        losses = np.zeros((nfold,2)) # 0:train, 1:val
+        preds_test = []
+        models = []
+        kf = KFold(n_splits=nfold, random_state=None, shuffle=False)
+        for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
+            print(i,'th fold training')
+            if isinstance(train, (np.ndarray, np.generic) ): # if numpy array
+                x_train = train[train_index]
+                y_train = train_label[train_index]
+                x_test = train[test_index]
+                y_test = train_label[test_index]
+            else: # if dataframe
+                x_train = train.iloc[train_index]
+                y_train = train_label.iloc[train_index]
+                x_test = train.iloc[test_index]
+                y_test = train_label.iloc[test_index]
+            dtrain = lgb.Dataset(x_train, label=y_train)
+            dvalid = lgb.Dataset(x_test, label=y_test)
+            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=100,verbose_eval=True,
+                                     early_stopping_rounds=10)
+            models.append(model)
+            preds_test.append(model.predict(test))
+            losses[i,0] = model.best_score['training']['l2']
+            losses[i,1] = model.best_score['valid_1']['l2']
+        y_pred = np.mean(preds_test, axis=0)
+    
+    # check performance
+    ref = pd.read_csv('submit/sample_submission_v26.csv')
+    print('diff with sw is',mean_squared_error(ref.Y18.values, y_pred))
     
     """ other classifier
     # rf

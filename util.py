@@ -151,3 +151,15 @@ def make_param_int(param, key_names):
         if key in key_names:
             param[key] = int(param[key])
     return param
+
+def irradiance_difference(data):
+    data_diff = np.zeros(data.shape)
+    
+    for i in range(1,len(data)-1):
+        if i%144==143:
+            # print(i)
+            data_diff[i] = data[i]
+        else:
+            data_diff[i] = data[i+1] - data[i]
+        
+    return data_diff

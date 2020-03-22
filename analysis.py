@@ -40,15 +40,9 @@ def plot_features(data, features, days):
 #%%
 plot_feature(train_label_1, 'Y02',range(30))
 plot_feature(train_label_2, 'Y18',range(30,32))
-
 plot_feature_2(train_1, 'X00',range(2))
 plot_feature_2(train_1, 'X01',range(2))
-
-
-
 plot_features(train_2, ['X00','X07','X28','X31','X32'], range(3))
-
-
 plot_features(train_label_2, train_label_1.columns[1:10], range(5))
 
 
@@ -93,6 +87,7 @@ best = trials.best_trial['result']['params']
 print(best)
 
 #%%
+import pandas as pd
 train_1 = pd.read_csv('data_npy/train_1.csv')
 train_2 = pd.read_csv('data_npy/train_2.csv')
 train_label_1 = pd.read_csv('data_npy/train_label_1.csv')
@@ -131,10 +126,12 @@ plt.plot(train_label_2)
 
 #%% correlation
 import numpy as np
-corr = np.corrcoef(np.vstack([train_label_1.loc[:4319,'Y18'].values, train_1.loc[:,'X00'].values]))
+train_1['solar_diff_X11'] = difference(train_1.X11.values)
+corr = np.corrcoef(np.vstack([np.ravel(train_label_1_ref.Y16.values), train_1.loc[:,'solar_diff_X11'].values]))
+corr = np.corrcoef(np.vstack([np.ravel(train_label_1_ref.Y16.values), train_1.loc[:,'X11'].values]))
 
 #%%
-ref = pd.read_csv('submit/sample_submission_v7.csv')
+ref = pd.read_csv('submit/sample_submission_v22.csv')
 mse_AIFrenz(ref.Y18.values, y_pred)
 
 #%%
@@ -166,12 +163,45 @@ plt.plot(train.X00[:1000])
 plt.plot(train_label_ref.Y16[:1000])
 
 #%%
-interv = range(11000,11500)
+from util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+
+interv = range(1000)
 plt.plot(ref.Y18.values[interv])
 plt.plot(y_pred[interv])
-plt.plot(trial[interv])
+plt.legend(['sw','ms'])
+
+#%% w
+from util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+
+ref = pd.read_csv('submit/sample_submission_v26.csv')
+test = pd.read_csv('data_raw/test.csv')
+
+interv = range(300)
+plt.plot(ref.Y18.values[interv])
 plt.plot(test.X00.values[interv],'--')
-plt.legend(['sw','ms','ensemble','T'])
+plt.plot(test.X11.values[interv],'--')
+plt.plot(test.X12.values[interv],'--')
+plt.legend(['sw','T','S','H'])
+
+#%% 3일치
+Y18 = pd.read_csv('data_npy/Y_18.csv')
+train = pd.read_csv('data_raw/train.csv')
+train = train.loc[:,'id':'X39']
+interv = range(30*144,33*144)
+plt.plot(Y18.Y18.values[interv])
+plt.plot(train.X00.values[interv],'--')
+plt.plot(train.X11.values[interv],'--')
+plt.plot(train.X12.values[interv],'--')
+plt.legend(['ground_truth','T','S','H'])
+
+#%% 일일 누적 일사량 -> 그냥 일사량으로
+import numpy as np
 
 
-
+tmp = difference(train.X34.values)
+tmp2 = train.X34.values
+plt.plot(tmp)

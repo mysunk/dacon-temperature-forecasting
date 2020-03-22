@@ -6,7 +6,7 @@ Created on Mon Mar  2 22:44:55 2020
 # packages
 import argparse
 from sklearn.metrics import make_scorer
-from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
 import numpy as np
 from util import *
 from hyperopt import hp, tpe, fmin, Trials, STATUS_OK, STATUS_FAIL
@@ -54,15 +54,15 @@ class Tuning_model(object):
     def lgb_space(self):
         # LightGBM parameters
         self.space = {
-            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.01),
+            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.1),
             'max_depth':                -1,
             'num_leaves':               hp.quniform('num_leaves',       5, 300, 1), 
             'min_data_in_leaf':		    hp.quniform('min_data_in_leaf',	50, 300, 1),	# overfitting을 피하기 위해 높은 값을
             'reg_alpha':                hp.uniform('reg_alpha',0.1,0.95),
             'reg_lambda':               hp.uniform('reg_lambda',0.1, 0.95),
             'min_child_weight':         hp.quniform('min_child_weight', 1, 30, 1),
-            'colsample_bytree':         hp.uniform('colsample_bytree', 0.01, 0.5),
-            'colsample_bynode':		    hp.uniform('colsample_bynode',0.01,0.5),
+            'colsample_bytree':         hp.uniform('colsample_bytree', 0.01, 1.0),
+            'colsample_bynode':		    hp.uniform('colsample_bynode',0.01,1.0),
             'bagging_freq':			    hp.quniform('bagging_freq',	1,20,1),
             'tree_learner':			    hp.choice('tree_learner',	['serial','feature','data','voting']),
             'subsample':                hp.uniform('subsample', 0.01, 1.0),
@@ -71,6 +71,7 @@ class Tuning_model(object):
             "min_sum_hessian_in_leaf": hp.quniform('min_sum_hessian_in_leaf',       5, 15, 1), 
             'random_state':             self.random_state,
             'n_jobs':                   -1,
+            'metrics':                  'l2'
         }
             
     # optimize
@@ -115,18 +116,44 @@ class Tuning_model(object):
         print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
-    
+    """
     def lgb_cv(self, params, train_set, nfolds):
         params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
                                      'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
         # cv_results = lgb.cv(params, train_set, num_boost_round=1000,nfold=nfolds,stratified=True,verbose_eval=True,
         #                     feval=mse_AIFrenz_lgb, early_stopping_rounds=10)
         dtrain = lgb.Dataset(train_set[0], label = train_set[1])
-        cv_results = lgb.cv(params, dtrain, num_boost_round=3000,nfold=nfolds,stratified=False,verbose_eval=False,
+        cv_results = lgb.cv(params, dtrain, num_boost_round=100,nfold=nfolds,stratified=False,verbose_eval=True,
                              metrics="l2", early_stopping_rounds=10)
         best_loss = min(cv_results['l2-mean'])
         # Dictionary with information for evaluation
         return {'loss': best_loss, 'params': params, 'status': STATUS_OK}
+    """
+    def lgb_cv(self, params, train_set, nfolds): # 실제 학습이랑 성능 차이가 너무 심해서..
+        params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
+                                     'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
+        train = train_set[0]
+        traon_label = train_set[1]
+        losses = []
+        kf = KFold(n_splits=nfolds,random_state=None, shuffle=False)
+        for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
+            if isinstance(train, (np.ndarray, np.generic) ): # if numpy array
+                x_train = train[train_index]
+                y_train = train_label[train_index]
+                x_test = train[test_index]
+                y_test = train_label[test_index]
+            else: # if dataframe
+                x_train = train.iloc[train_index]
+                y_train = train_label.iloc[train_index]
+                x_test = train.iloc[test_index]
+                y_test = train_label.iloc[test_index]
+            dtrain = lgb.Dataset(x_train, label=y_train)
+            dvalid = lgb.Dataset(x_test, label=y_test)
+            model = lgb.train(params, train_set = dtrain,  
+                              valid_sets=[dtrain, dvalid],num_boost_round=300,verbose_eval=False,
+                                     early_stopping_rounds=10)
+            losses.append(model.best_score['valid_1']['l2'])
+        return {'loss': np.mean(losses,axis=0),'params':params ,'status': STATUS_OK}
     
 if __name__ == '__main__':
     
@@ -135,31 +162,40 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
     parser.add_argument('--max_evals', default=100)
-    parser.add_argument('--save_file', default='lgb_0320_4')
-    parser.add_argument('--nfold', default=10)
-    parser.add_argument('--N', default=4)
+    parser.add_argument('--save_file', default='trial_0322_7')
+    parser.add_argument('--nfold', default=33)
+    parser.add_argument('--N', default=3)
     args = parser.parse_args()
     
-    # load dataset -- 다시
+    #============================================= load & pre-processing ==================================================
     train = pd.read_csv('data_raw/train.csv')
-
+    # profile_feature = ['X00','X07','X28','X31','X32','X02','X03','X18','X24','X26','solar_diff_X11','solar_diff_X34']
+    
     # split data and label
     train = train.loc[:,'id':'X39']
-    train['time'] = train.id.values % 144
-    train = train.drop(columns = 'id')
+    # add new features
+    drop_feature = ['id','X14','X16','X19']
+    time = train.id.values % 144
+    train = train.drop(columns = drop_feature)
+    train['solar_diff_X11'] = irradiance_difference(train.X11.values)
+    train['solar_diff_X34'] = irradiance_difference(train.X34.values)
+    profile_feature = train.columns # time 빼고 전부
+    train['time'] = time
     train_label = pd.read_csv('data_npy/Y_18.csv')
     
     # declare dataset
     N = args.N
-    train = add_profile_v2(train, ['X00', 'X12','X11'],N) # 기온, 습도, 일사량
+    train = add_profile_v2(train, profile_feature,N)
     train = train.drop(columns='index')
     train_label = train_label[N:]
+    #============================================= load & pre-processing ==================================================
     
     # main
     clf = args.method
     bayes_trials = Trials()
     obj = Tuning_model()
-    tuning_algo = tpe.suggest  # tpe.rand.sugggest -- random search
+    tuning_algo = tpe.suggest  
+    # tuning_algo = tpe.rand.suggest # -- random search
     obj.process(args.method, ((train, train_label)), args.nfold, 
                            bayes_trials, tuning_algo, args.max_evals)
     
