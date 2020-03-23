@@ -150,7 +150,7 @@ class Tuning_model(object):
             dtrain = lgb.Dataset(x_train, label=y_train)
             dvalid = lgb.Dataset(x_test, label=y_test)
             model = lgb.train(params, train_set = dtrain,  
-                              valid_sets=[dtrain, dvalid],num_boost_round=300,verbose_eval=False,
+                              valid_sets=[dtrain, dvalid],num_boost_round=1000,verbose_eval=False,
                                      early_stopping_rounds=10)
             losses.append(model.best_score['valid_1']['l2'])
         return {'loss': np.mean(losses,axis=0),'params':params ,'status': STATUS_OK}
@@ -161,10 +161,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Dacon temperature regression',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
-    parser.add_argument('--max_evals', default=100)
+    parser.add_argument('--max_evals', default=100,type=int)
     parser.add_argument('--save_file', default='trial_0322_7')
-    parser.add_argument('--nfold', default=33)
-    parser.add_argument('--N', default=3)
+    parser.add_argument('--nfold', default=33,type=int)
+    parser.add_argument('--N', default=3,type=int)
     args = parser.parse_args()
     
     #============================================= load & pre-processing ==================================================
