@@ -48,11 +48,14 @@ def add_profile(data, feature_names):
     return train_1_p
 
 def add_profile_v2(data, features, N):
-    new = data.iloc[N:,:].reset_index() # 앞에 N개 자름
-    additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
-    for i in range(N,data.shape[0]):
-        additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
-    new = pd.concat([new, additional],axis=1)
+    if N!=0:
+        new = data.iloc[N:,:].reset_index(drop=True) # 앞에 N개 자름
+        additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
+        for i in range(N,data.shape[0]):
+            additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
+        new = pd.concat([new, additional],axis=1)
+    else:
+        new = data
     return new
 
 def add_profile_v3(data, features, N):
@@ -156,9 +159,9 @@ def irradiance_difference(data):
     data_diff = np.zeros(data.shape)
     
     for i in range(1,len(data)-1):
-        if i%144==143:
+        if i%144==143 or i%144 == 0:
             # print(i)
-            data_diff[i] = data[i]
+            data_diff[i] = 0
         else:
             data_diff[i] = data[i+1] - data[i]
         

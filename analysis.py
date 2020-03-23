@@ -82,7 +82,7 @@ corr = train_label_1[columns].corr()
 
 #%% load pkl result
 from util import *
-trials = load_obj('tuning_v1')
+trials = load_obj('lgb_0322_33fold_N1')
 best = trials.best_trial['result']['params']
 print(best)
 
@@ -205,3 +205,67 @@ import numpy as np
 tmp = difference(train.X34.values)
 tmp2 = train.X34.values
 plt.plot(tmp)
+
+#%%
+plt.plot()
+
+#%%
+from util import *
+import matplotlib.pyplot as plt
+train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+Y_18 = pd.read_csv('data_npy/Y_18.csv')
+plt.figure()
+plt.plot(train_label_1.loc[range(1000),['Y15','Y16']],'--')
+plt.plot(Y_18.values[range(1000)])
+plt.legend(['Y15','Y16','Y_18_tmp'])
+
+#%% 15, 22, 27일 plot
+train_2 = train_2.reset_index(drop=True)
+plt.figure()
+plt.plot(train_1.loc[range(27*144,28*144),'X06'].reset_index(drop=True))
+plt.plot(train_2.loc[range(144),'X06'])
+
+#%%
+mean_val = np.mean(train_label_1.loc[:,['Y15','Y16']].values,axis=1)
+mean_val = np.hstack([mean_val, train_label_2.Y18])
+Y_18.loc[:,'Y18'] = mean_val
+plt.plot(train_label_1.loc[:,'Y15'])
+plt.plot(Y_18.values)
+plt.legend(['Y09','Y18_tmp'])
+
+Y_18.to_csv('data_npy/Y_18_trial_1.csv',index=False)
+
+#%% 3일치 plot
+plt.plot(train_label_2.Y18)
+
+#%%
+Y_18 = pd.read_csv('data_npy/Y_18_trial_1.csv')
+plt.figure()
+plt.plot(Y_18.iloc[range(29*144,30*144)])
+# plt.plot(train_label_2.Y18)
+
+#%%
+
+plot_features(train_label_1,['Y15','Y16'],range(5))
+#%%
+plt.plot(train_2.X00.values[range(143)])
+plt.plot(train_2.X01)
+plt.plot(train_2.X02)
+plt.plot(train_2.X03)
+plt.plot(train_2.X04)
+plt.plot(train_2.X05)
+plt.plot(train_2.solar_diff_X11.values[range(144)])
+train_2['solar_diff_X11'] = irradiance_difference(train_2.X11.values)
+plt.plot(train_label_2.Y18.values[range(143)])
+
+#%%
+import matplotlib.pyplot as plt
+plt.plot(y_pred)
+plt.plot(train_label_2.Y18.values)
+
+#%%
+import matplotlib.pyplot as plt
+interest = 'Y15'
+plt.plot(y_pred)
+plt.plot(train_label_1.loc[:,interest])
+plt.legend([interest,'Y18_tmp'])

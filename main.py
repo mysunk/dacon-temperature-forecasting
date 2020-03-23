@@ -63,20 +63,29 @@ def svr_param(self):
 if __name__ == '__main__':
     # load cv result
     # param = lgb_param() # pre-defined param
-    trials = load_obj('trial_0322_7')
-    param = trials[66]['params']
+    trials = load_obj('tmp')
+    param = trials[59]['params']
     param['metric']='l2'
     
     # User
     # profile_feature = ['X00','X01','X02','X04','X05','X11','X12','X13','solar_diff_X11'] 
     drop_feature = ['id','X14','X16','X19']
     
-    N = 3
-    nfold = 11
+    N = 0
+    nfold = 144
     
     #============================================= load & pre-processing ==================================================
     
     train = pd.read_csv('data_raw/train.csv')
+    train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
+    test = pd.read_csv('data_raw/test.csv')
+    
+    ###tmp
+    train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+    train = train_2
+    train_label = train_label_2.loc[:,'Y18']
+    test = train_1
+    
     train = train.loc[:,'id':'X39']
     # add new features
     time = train.id.values % 144
@@ -84,16 +93,13 @@ if __name__ == '__main__':
     train['solar_diff_X34'] = irradiance_difference(train.X34.values)
     train = train.drop(columns = drop_feature)
     train_partial = train.iloc[-N:,:] # 뒤의 N개 잘라내서 저장
-    train_label = pd.read_csv('data_npy/Y_18.csv')
     
     # declare dataset
     profile_feature = train.columns # time 빼고 전부
     train['time'] = time
     train = add_profile_v2(train, profile_feature,N) 
-    train = train.drop(columns='index')
     train_label = train_label[N:]
     
-    test = pd.read_csv('data_raw/test.csv')
     test = test.loc[:,'id':'X39']
     test['time'] = test.id.values % 144
     test['solar_diff_X11'] = irradiance_difference(test.X11.values)
@@ -101,15 +107,14 @@ if __name__ == '__main__':
     test = test.drop(columns =drop_feature )
     
     # declare dataset
-    
-    test = pd.concat([train_partial, test], axis=0).reset_index(drop=True)
+    if N != 0:
+        test = pd.concat([train_partial, test], axis=0).reset_index(drop=True)
     test = add_profile_v2(test,profile_feature,N)
-    test = test.drop(columns = 'index')
     #============================================= load & pre-processing ==================================================
     
     if nfold==0:
         dtrain = lgb.Dataset(train, label=train_label)
-        model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=100,verbose_eval=True,
+        model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True,
                                      early_stopping_rounds=10)
         y_pred = model.predict(test)
     else:
@@ -131,7 +136,7 @@ if __name__ == '__main__':
                 y_test = train_label.iloc[test_index]
             dtrain = lgb.Dataset(x_train, label=y_train)
             dvalid = lgb.Dataset(x_test, label=y_test)
-            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=100,verbose_eval=True,
+            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
                                      early_stopping_rounds=10)
             models.append(model)
             preds_test.append(model.predict(test))

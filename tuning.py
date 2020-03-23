@@ -7,6 +7,7 @@ Created on Mon Mar  2 22:44:55 2020
 import argparse
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 from util import *
 from hyperopt import hp, tpe, fmin, Trials, STATUS_OK, STATUS_FAIL
@@ -162,34 +163,46 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
     parser.add_argument('--max_evals', default=100,type=int)
-    parser.add_argument('--save_file', default='trial_0322_7')
-    parser.add_argument('--nfold', default=33,type=int)
-    parser.add_argument('--N', default=3,type=int)
+    parser.add_argument('--save_file', default='tmp')
+    parser.add_argument('--nfold', default=10,type=int)
+    parser.add_argument('--N', default=0,type=int)
+    parser.add_argument('--label', default='Y15')
     args = parser.parse_args()
     
     #============================================= load & pre-processing ==================================================
     train = pd.read_csv('data_raw/train.csv')
-    # profile_feature = ['X00','X07','X28','X31','X32','X02','X03','X18','X24','X26','solar_diff_X11','solar_diff_X34']
+    train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
+    
+    ###tmp
+    train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+    train = train_1
+    train_label = train_label_1.loc[:,args.label]
     
     # split data and label
     train = train.loc[:,'id':'X39']
     # add new features
     drop_feature = ['id','X14','X16','X19']
+    # profile_feature = ['X00','X07','X28','X31','X32','X02','X03','X18','X24','X26','solar_diff_X11','solar_diff_X34']
+    
     time = train.id.values % 144
     train = train.drop(columns = drop_feature)
     train['solar_diff_X11'] = irradiance_difference(train.X11.values)
     train['solar_diff_X34'] = irradiance_difference(train.X34.values)
     profile_feature = train.columns # time 빼고 전부
     train['time'] = time
-    train_label = pd.read_csv('data_npy/Y_18.csv')
+    
     
     # declare dataset
     N = args.N
     train = add_profile_v2(train, profile_feature,N)
-    train = train.drop(columns='index')
     train_label = train_label[N:]
-    #============================================= load & pre-processing ==================================================
     
+    # match scale
+    scaler = StandardScaler()
+    train.loc[:,:] = scaler.fit_transform(train.values)
+    
+
+    #============================================= load & pre-processing ==================================================
     # main
     clf = args.method
     bayes_trials = Trials()
