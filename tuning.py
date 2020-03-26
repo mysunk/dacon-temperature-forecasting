@@ -55,7 +55,7 @@ class Tuning_model(object):
     def lgb_space(self):
         # LightGBM parameters
         self.space = {
-            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.1),
+            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.2),
             'max_depth':                -1,
             'num_leaves':               hp.quniform('num_leaves',       5, 300, 1), 
             'min_data_in_leaf':		    hp.quniform('min_data_in_leaf',	50, 300, 1),	# overfitting을 피하기 위해 높은 값을
@@ -164,19 +164,20 @@ if __name__ == '__main__':
     parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
     parser.add_argument('--max_evals', default=100,type=int)
     parser.add_argument('--save_file', default='tmp')
-    parser.add_argument('--nfold', default=10,type=int)
-    parser.add_argument('--N', default=0,type=int)
+    parser.add_argument('--nfold', default=30,type=int)
+    parser.add_argument('--N', default=1,type=int)
     parser.add_argument('--label', default='Y15')
     args = parser.parse_args()
     
     #============================================= load & pre-processing ==================================================
     train = pd.read_csv('data_raw/train.csv')
-    train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
+    #train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
     
     ###tmp
     train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
-    train = train_1
+    #train = train_1
     train_label = train_label_1.loc[:,args.label]
+    # train_label = Y18_ms.mean(axis=1)
     
     # split data and label
     train = train.loc[:,'id':'X39']

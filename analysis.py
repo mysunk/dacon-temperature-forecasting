@@ -8,7 +8,7 @@ from util import *
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
 
 #%% 하루 단위로
 def plot_feature(data, feature_name, days):
@@ -82,7 +82,7 @@ corr = train_label_1[columns].corr()
 
 #%% load pkl result
 from util import *
-trials = load_obj('lgb_0322_33fold_N1')
+trials = load_obj('Y16_N1')
 best = trials.best_trial['result']['params']
 print(best)
 
@@ -212,7 +212,7 @@ plt.plot()
 #%%
 from util import *
 import matplotlib.pyplot as plt
-train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+_, _, _, train_label_2, _,_= load_dataset('data_raw/')
 Y_18 = pd.read_csv('data_npy/Y_18.csv')
 plt.figure()
 plt.plot(train_label_1.loc[range(1000),['Y15','Y16']],'--')
@@ -248,15 +248,24 @@ plt.plot(Y_18.iloc[range(29*144,30*144)])
 
 plot_features(train_label_1,['Y15','Y16'],range(5))
 #%%
-plt.plot(train_2.X00.values[range(143)])
-plt.plot(train_2.X01)
-plt.plot(train_2.X02)
-plt.plot(train_2.X03)
-plt.plot(train_2.X04)
-plt.plot(train_2.X05)
-plt.plot(train_2.solar_diff_X11.values[range(144)])
+train_2 = train_2.reset_index(drop=True)
+train_label_2 = train_label_2.reset_index(drop=True)
+interv = range(144)
+plt.plot(train_2.X00.values[interv])
+# plt.plot(train_2.X01.values[interv])
+# plt.plot(train_2.X02.values[interv])
+# plt.plot(train_2.X03.values[interv])
+# plt.plot(train_2.X04.values[interv])
+# plt.plot(train_2.X05.values[interv])
+plt.plot(train_2.solar_diff_X11.values[range(144)]*50)
+train_1['solar_diff_X11'] = irradiance_difference(train_1.X11.values)
 train_2['solar_diff_X11'] = irradiance_difference(train_2.X11.values)
-plt.plot(train_label_2.Y18.values[range(143)])
+train_1['solar_diff_X34'] = irradiance_difference(train_1.X34.values)
+train_2['solar_diff_X34'] = irradiance_difference(train_2.X34.values)
+plt.plot(train_label_2.Y18.values[range(144)])
+plt.legend(['X00','X02','X03','X11_diff','Y18'])
+
+np.corrcoef(train_2.X00, train_2.solar_diff_X11)
 
 #%%
 import matplotlib.pyplot as plt
@@ -269,3 +278,177 @@ interest = 'Y15'
 plt.plot(y_pred)
 plt.plot(train_label_1.loc[:,interest])
 plt.legend([interest,'Y18_tmp'])
+
+#%%
+for day in range(3):
+    plt.figure()
+    plt.plot(train_1.X01.loc[range(144*day,144*(day+1))].reset_index(drop=True))
+    plt.plot(train_2.X01.loc[range(144)].reset_index(drop=True))
+    plt.legend(['train','test'])
+    plt.title('day'+str(day))
+    
+#%% similarity 계산
+
+train_2 = train_2.reset_index(drop=True)
+train_1 = train_1.reset_index(drop=True)
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+train_1.loc[:,:] = scaler.fit_transform(train_1.loc[:,:].values)
+train_2.loc[:,:] = scaler.transform(train_2.loc[:,:].values)
+#%%
+feature = ['X00','X07','X11','X12','X15','X20','X30','X31','X32','X34','X37','X38','solar_diff_X11','solar_diff_X34']
+feature_weight = np.array([3,3,1,0,0,0,0,3,3,0,0,0,1,1])
+feature_weight = feature_weight / np.sum(feature_weight)
+simday_index = np.ones((144,3)) # day 1, 2, 3
+for point in range(144): # 한 포인트 단위로
+    for day in range(3):
+        similarity = np.linalg.norm((np.vstack([train_2.loc[day*144+point,feature].values]*30)-train_1.loc[range(point,4320,144),feature].values)*feature_weight,axis=1)
+        print('for',point,'th iteration, min value is',min(similarity))
+        simday_index[point,day] = np.argmin(similarity)
+for i in range(432):
+    train_label_2.loc[i,train_label_1.columns[1:]] = train_label_1.loc[(int)(simday_index[i%144,(int)(i/144)])*144+(i%144),train_label_1.columns[1:]]
+    
+
+
+
+#%%
+train_label_2 = train_label_2.reset_index(drop=True)
+for i in range(1,19):
+    train_label_2[train_label_1.columns[i]] = np.zeros((432))
+
+
+#%%
+plt.plot(train_label_2.Y15.values)
+plt.plot(train_label_2.Y18.values)
+# plt.plot((train_label_2.Y15.values+train_label_2.Y16.values)/2)
+# plt.plot(train_label_1.Y16.values[range(432)])
+# plt.plot(ref.Y18.values)
+# plt.plot(train_label_1.Y15.values[range(432)])
+# ref = pd.read_csv('data_npy/Y_18.csv')
+
+#%%
+
+    start_h = point * 6
+    end_h = start_h + 5
+    for i in range(6):
+        similarity[point] = np.linalg.norm(np.vstack([train_2.loc[point,feature].values]*4320)-train_1.loc[start,feature].values,axis=1)
+
+#%% moving average
+data = train_label_2.Y16.values
+new_2 = data
+for i in range(1,430-1):
+    new_2[i] = np.mean(data[i-1:i+1])
+
+    
+#%%
+plt.plot(train_label_2.Y18.values)
+# plt.plot(train_label_2.Y15.values,'--')
+# plt.plot(train_label_2.Y16.values,'--')
+new = train_label_2.Y16.values*0.75 + train_label_2.Y15.values*0.36
+plt.plot(new,'--')
+# plt.plot(new_2*1.3 - new_1*0.2)
+
+#%%
+
+new = train_label_1.Y16.values * 0.75 + train_label_1.Y15.values * 0.36
+plt.plot(new)
+plt.plot(train_label_1.Y16.values)
+plt.plot(range(4320,4320+432),train_label_2.Y18.values)
+plt.plot(ref.Y18.values[range(4320)],'--')
+plt.legend(['new','Y16','Y18','sw'])
+
+ref.iloc[:4320,0] = new
+ref.to_csv('data_npy/Y_18_w.csv',index=False)
+
+#%%
+import matplotlib.pyplot as plt
+plt.plot(y_pred)
+plt.plot(train_label_2.Y18.values)
+
+#%%
+Y16_pred = np.mean(preds_Y16, axis=0)
+Y15_pred = np.mean(preds_Y15, axis=0)
+
+tmp = train_label_2
+tmp['Y18'] = Y16_pred
+tmp.to_csv('data_npy/Y16_pred.csv',index=False)
+train_label_2.to_csv('data_npy/Y18_ref.csv')
+
+#%%
+for i in range(5):
+    plt.plot(preds_Y16[i],':')
+
+#%%
+interv = range(144)
+plt.plot(Y15_pred[interv])
+plt.plot(Y16_pred[interv])
+plt.plot(train_label_2.Y18.values[interv])
+plt.legend(['Y15','Y16','Y18'])
+
+#%%
+train_label_1.to_csv('data_npy/train_label_2.csv',index=False)
+
+#%%
+Y18_ms = pd.read_csv('data_npy/Y18_ms.csv',header=None)
+Y18_sw = pd.read_csv('data_npy/Y_18_1.csv')
+tmp = pd.read_csv('data_npy/Y_18_2.csv')
+Y18_sw['Y18_2'] = tmp.Y18.values
+#%%
+ref = pd.read_csv('submit/sample_submission_v26.csv')
+mse_AIFrenz(ref.Y18.values, y_pred_1)
+mean_squared_error(ref.Y18.values, y_pred_1)
+y_pred = np.mean(preds,axis=0)
+plt.plot(y_pred)
+
+#%%
+plt.plot(y_pred)
+plt.plot(ref.Y18.values)
+
+#%%
+y_pred_15 = np.mean(preds,axis=0)
+y_pred_16 = np.mean(preds,axis=0)
+
+#%%
+interv = range(6000,7000)
+plt.plot(y_pred_1[interv])
+# plt.plot(y_pred_2[interv])
+plt.plot(trial[interv])
+plt.plot(ref.Y18.values[interv],'--')
+plt.legend(['ms1','ms2','sw'])
+
+#%%
+trial = y_pred_1 * 0.4 + y_pred_2 * 0.05 + y_pred_3 * 0.05 + ref.Y18.values * 0.5
+#%%
+res_y15= pd.read_csv('data_npy/res_15.csv',header=None)
+res_y16= pd.read_csv('data_npy/res_16.csv',header=None)
+y18_w_y15 = y_pred_15 + np.ravel(res_y15.values)
+y18_w_y16 = y_pred_16 + np.ravel(res_y16.values)
+y_pred_1 = y18_w_y15 * 0.5 + y18_w_y16 * 0.5
+mse_AIFrenz(ref.Y18.values, y_pred_1)
+#%%
+mean_res_y15= pd.read_csv('data_npy/mean_res_y15.csv',header=None)
+mean_res_y16= pd.read_csv('data_npy/mean_res_y16.csv',header=None)
+y18_w_y15 = y_pred_15 + np.mean(mean_res_y15.values)
+y18_w_y16 = y_pred_16 + np.mean(mean_res_y16.values)
+y_pred_2 = y18_w_y15 * 0.5 + y18_w_y16 * 0.5
+mse_AIFrenz(ref.Y18.values, y_pred_2)
+#%%
+mean_res_y15= pd.read_csv('data_npy/mean_res_y15.csv',header=None)
+mean_res_y16= pd.read_csv('data_npy/mean_res_y16.csv',header=None)
+y18_w_y15 = y_pred_15 + np.ravel(mean_res_y15.values)
+y18_w_y16 = y_pred_16 + np.ravel(mean_res_y16.values)
+y_pred_3 = y18_w_y15 * 0.5 + y18_w_y16 * 0.5
+mse_AIFrenz(ref.Y18.values, y_pred_3)
+#%%
+
+#%%
+
+
+
+#%%
+ref.Y18 = y_pred_1
+ref.to_csv('submit/submit_5.csv',index=False)
+
+ref.Y18 = trial
+ref.to_csv('submit/submit_6.csv',index=False)
+#%%
