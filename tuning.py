@@ -165,7 +165,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_evals', default=100,type=int)
     parser.add_argument('--save_file', default='tmp')
     parser.add_argument('--nfold', default=30,type=int)
-    parser.add_argument('--N', default=1,type=int)
+    parser.add_argument('--N_T', default=12,type=int)
+    parser.add_argument('--N_S', default=20,type=int)
     parser.add_argument('--label', default='Y15')
     args = parser.parse_args()
     
@@ -173,30 +174,26 @@ if __name__ == '__main__':
     train = pd.read_csv('data_raw/train.csv')
     #train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
     
-    ###tmp
+    # split data and label
     train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
-    #train = train_1
+    train = train_1
     train_label = train_label_1.loc[:,args.label]
     # train_label = Y18_ms.mean(axis=1)
     
-    # split data and label
+    # add and delete feature
     train = train.loc[:,'id':'X39']
-    # add new features
     drop_feature = ['id','X14','X16','X19']
-    # profile_feature = ['X00','X07','X28','X31','X32','X02','X03','X18','X24','X26','solar_diff_X11','solar_diff_X34']
-    
     time = train.id.values % 144
     train = train.drop(columns = drop_feature)
-    train['solar_diff_X11'] = irradiance_difference(train.X11.values)
-    train['solar_diff_X34'] = irradiance_difference(train.X34.values)
-    profile_feature = train.columns # time 빼고 전부
+    train['X11_diff'] = irradiance_difference(train.X11.values) # 누적을 difference로 바꿈
+    train['X34_diff'] = irradiance_difference(train.X34.values)
     train['time'] = time
-    
-    
-    # declare dataset
-    N = args.N
-    train = add_profile_v2(train, profile_feature,N)
-    train_label = train_label[N:]
+    N_T = args.N_T
+    N_S = args.N_S
+    train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+    train = add_profile_v4(train, 'X31',N_T) # 온도
+    train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
+    train_label = train_label
     
     # match scale
     scaler = StandardScaler()

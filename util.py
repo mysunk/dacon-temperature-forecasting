@@ -62,11 +62,19 @@ def add_profile_v3(data, features, N):
     new = data.iloc[N:,:].reset_index() # 앞에 N개 자름
     additional = pd.DataFrame(np.zeros((data.shape[0]-N,len(features)*N)))
     for i in range(N,data.shape[0]):
-        print(i)
-        # additional.iloc[i-N,:]= np.ravel(data.loc[i-N:i-1,features].values) # 한줄로 만들어서 옆에 붙임
         additional.iloc[i-1]= data.loc[i-1,features].values # 한줄로 만들어서 옆에 붙임
     new = pd.concat([new, additional],axis=1)
     return new
+
+def add_profile_v4(data, feature, N):
+    if N!=0:
+        for i in range(N):
+            additional = np.zeros((data.shape[0]))
+            additional[i+1:] = data.loc[:data.shape[0]-i-2,feature].values
+            additional = pd.DataFrame(additional,columns=[feature+'_'+str(i+1)])
+            data = pd.concat([data, additional],axis=1)
+    return data
+
 
 def mse_AIFrenz_lgb(y_pred, train_data): # custom score function
     '''
@@ -131,11 +139,11 @@ def make_day_label(label):
 
 def save_obj(obj, name):
     try:
-        with open('trials/'+ name + '.pkl', 'wb') as f:
+        with open('results/'+ name + '.pkl', 'wb') as f:
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
     except FileNotFoundError:
-        os.mkdir('trials')
-        with open('trials/'+ name + '.pkl', 'wb') as f:
+        os.mkdir('results')
+        with open('results/'+ name + '.pkl', 'wb') as f:
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)        
 
 def load_obj(name):
