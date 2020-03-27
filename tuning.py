@@ -163,11 +163,11 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
     parser.add_argument('--max_evals', default=100,type=int)
-    parser.add_argument('--save_file', default='tmp')
-    parser.add_argument('--nfold', default=30,type=int)
+    parser.add_argument('--save_file', default='tmp_2')
+    parser.add_argument('--nfold', default=10,type=int)
     parser.add_argument('--N_T', default=12,type=int)
     parser.add_argument('--N_S', default=20,type=int)
-    parser.add_argument('--label', default='Y15')
+    parser.add_argument('--label', default='Y16')
     args = parser.parse_args()
     
     #============================================= load & pre-processing ==================================================
@@ -182,24 +182,34 @@ if __name__ == '__main__':
     
     # add and delete feature
     train = train.loc[:,'id':'X39']
-    drop_feature = ['id','X14','X16','X19']
-    time = train.id.values % 144
-    train = train.drop(columns = drop_feature)
+    train['time'] = train.id.values % 144
     train['X11_diff'] = irradiance_difference(train.X11.values) # 누적을 difference로 바꿈
     train['X34_diff'] = irradiance_difference(train.X34.values)
-    train['time'] = time
+    
     N_T = args.N_T
     N_S = args.N_S
     train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
     train = add_profile_v4(train, 'X31',N_T) # 온도
     train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
-    train_label = train_label
     
+    #==================================================tmp
+    """
+    train = train_2
+    train_label = train_label_2
+    del train_label['id']
+    
+    # now residual is label
+    train_label['Y15_res'] = train_label['Y18'].values - np.load('data_npy/Y15_pred.npy')
+    # train_label['Y16_res'] = np.load('data_npy/Y16_pred') - train_label['Y18'].values
+    del train_label['Y18']
+    """
+    #==================================================tmp
     # match scale
     scaler = StandardScaler()
     train.loc[:,:] = scaler.fit_transform(train.values)
     
-
+    # train = train.values
+    # train_label = train_label.values
     #============================================= load & pre-processing ==================================================
     # main
     clf = args.method

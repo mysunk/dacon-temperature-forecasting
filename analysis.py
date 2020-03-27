@@ -452,3 +452,101 @@ ref.to_csv('submit/submit_5.csv',index=False)
 ref.Y18 = trial
 ref.to_csv('submit/submit_6.csv',index=False)
 #%%
+import numpy as np
+from util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+Y15_pred = np.load('data_npy/Y15_pred.npy')
+train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+train_label_2 = train_label_2.Y18.values
+
+#%%
+import numpy as np
+from util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+Y16_pred = np.load('data_npy/Y16_pred.npy')
+train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
+train_label_2 = train_label_2.Y18.values
+
+#%%
+# plt.plot(Y15_pred)
+# plt.plot(train_label_2)
+plt.plot()
+train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+
+#%%
+
+train_2 = train_2.reset_index(drop=True)
+
+scaler = StandardScaler()
+train_2.loc[:,:] = scaler.fit_transform(train_2.values)
+
+#%%
+res = train_label_2-Y15_pred
+day1 = res[:144]
+day2 = res[144:288]
+day3 = res[288:]
+plt.plot(day1,'--')
+plt.plot(day2,'--')
+plt.plot(day3,'--')
+mean_val = (day1 + day2 + day3)/3
+plt.plot(mean_val)
+
+#%%
+res = train_label_2-Y16_pred
+day1 = res[:144]
+day2 = res[144:288]
+day3 = res[288:]
+plt.plot(day1,'--')
+plt.plot(day2,'--')
+plt.plot(day3,'--')
+mean_val = (day1 + day2 + day3)/3
+plt.plot(mean_val)
+
+#%%
+plt.plot(train_2.X00[:144])
+plt.plot(train_2.X07[:144])
+plt.plot(train_2.X02[:144])
+
+#%%
+train_label_2.to_csv('matlab/Y18.csv')
+train_label_2.Y18 = Y15_pred
+train_label_2.to_csv('matlab/Y15.csv')
+train_label_2.Y18 = Y16_pred
+train_label_2.to_csv('matlab/Y16.csv')
+
+#%%
+import numpy as np
+from util import *
+import pandas as pd
+import matplotlib.pyplot as plt
+Y15_pred = np.load('data_npy/Y15_pred_80day.npy')
+Y16_pred = np.load('data_npy/Y16_pred_80day.npy')
+
+Y15_res = pd.read_csv('matlab/res_15.csv',header=None)
+Y16_res = pd.read_csv('matlab/res_16.csv',header=None)
+
+Y15_res = np.ravel(Y15_res.values)
+Y16_res = np.ravel(Y16_res.values)
+
+Y18_pred = (Y15_pred + 1.7) * 0.5 + (Y16_pred + 1.7) * 0.5
+
+ref = pd.read_csv('submit/sample_submission_v33.csv')
+
+
+mse_AIFrenz(Y18_pred,ref.Y18.values)
+
+#%%
+interv = range(5000,6000)
+plt.plot(Y18_pred[interv])
+plt.plot(ref.Y18.values[interv])
+# plt.plot(ref_ms.Y18.values[interv])
+plt.legend(['now','sw','ms_prev'])
+
+#%%
+ref_ms = pd.read_csv('submit/submit_5.csv')
+
+#%%
+ref.Y18 = Y18_pred
+ref.to_csv('submit/submit_6.csv',index=False)

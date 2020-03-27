@@ -59,58 +59,50 @@ def svr_param(self):
         'random_state' :           0,
         }
 
-# def tmps():
 if __name__ == '__main__':
     # load cv result
     # param = lgb_param() # pre-defined param
     
-    param_sequence = [24, 41, 42]
+    # param_sequence = [33, 65, 66]
+    param_sequence = [70, 69, 43]
     preds = []
+    loss_results = []
     for tries in param_sequence:
-        trials = load_obj('Y16_N1')
+        trials = load_obj('tmp')
         param = trials[tries]['params']
         param['metric']='l2'
         
         # User
-        # profile_feature = ['X00','X01','X02','X04','X05','X11','X12','X13','solar_diff_X11'] 
-        drop_feature = ['id','X14','X16','X19']
-        
-        N = 1
+        N_T = 12
+        N_S = 20
         nfold = 30
         
         #============================================= load & pre-processing ==================================================
-        
-        train = pd.read_csv('data_raw/train.csv')
-        test = pd.read_csv('data_raw/test.csv')
+        # split data and label
         train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
-        train = train_1
-        train_label = train_label_1.loc[:,'Y16']
-        # train_label = Y18_ms.mean(axis=1)
+        train = pd.read_csv('data_raw/train.csv')
+        train_label = train_label_1.loc[:,'Y15']
         
+        # if for test sample
+        train = pd.concat([train,test],axis=0).reset_index(drop=True)
+        
+        # add and delete feature
         train = train.loc[:,'id':'X39']
-        # add new features
+        drop_feature = ['id','X14','X16','X19']
         time = train.id.values % 144
-        train['solar_diff_X11'] = irradiance_difference(train.X11.values)
-        train['solar_diff_X34'] = irradiance_difference(train.X34.values)
         train = train.drop(columns = drop_feature)
-        train_partial = train.iloc[-N:,:] # 뒤의 N개 잘라내서 저장
-        
-        # declare dataset
-        profile_feature = train.columns # time 빼고 전부
+        train['X11_diff'] = irradiance_difference(train.X11.values) # 누적을 difference로 바꿈
+        train['X34_diff'] = irradiance_difference(train.X34.values)
         train['time'] = time
-        train = add_profile_v2(train, profile_feature,N) 
-        train_label = train_label[N:]
+        train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+        train = add_profile_v4(train, 'X31',N_T) # 온도
+        train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
         
-        test = test.loc[:,'id':'X39']
-        test['time'] = test.id.values % 144
-        test['solar_diff_X11'] = irradiance_difference(test.X11.values)
-        test['solar_diff_X34'] = irradiance_difference(test.X34.values)
-        test = test.drop(columns =drop_feature )
+        # test = train.iloc[4320:,:]
+        # train = train.iloc[:4320,:]
         
-        # declare dataset
-        if N != 0:
-            test = pd.concat([train_partial, test], axis=0).reset_index(drop=True)
-        test = add_profile_v2(test,profile_feature,N)
+        test = train.iloc[4752:,:]
+        train = train.iloc[:4320,:]
         #============================================= load & pre-processing ==================================================
         
         if nfold==0:
@@ -144,7 +136,11 @@ if __name__ == '__main__':
                 losses[i,0] = model.best_score['training']['l2']
                 losses[i,1] = model.best_score['valid_1']['l2']
             y_pred = np.mean(preds_test, axis=0)
+        loss_results.append(losses)
         preds.append(y_pred)
+    
+    y_pred = np.mean(preds,axis=0)
+    np.save('data_npy/Y15_pred_80day.npy',y_pred)
     
     # check performance
     # ref = pd.read_csv('submit/sample_submission_v26.csv')

@@ -147,7 +147,7 @@ def save_obj(obj, name):
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)        
 
 def load_obj(name):
-    with open('trials/' + name + '.pkl', 'rb') as f:
+    with open('results/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
     
 def lgb_eval_function(pred, train):
