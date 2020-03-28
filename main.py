@@ -63,12 +63,13 @@ if __name__ == '__main__':
     # load cv result
     # param = lgb_param() # pre-defined param
     
-    # param_sequence = [33, 65, 66]
-    param_sequence = [70, 69, 43]
+    param_sequence = [22, 8, 20, 6, 33] #==Y09
+    # param_sequence = [28, 37, 46, 26, 27] #==Y15
+    # param_sequence = [36, 28, 27, 33, 24] #==Y16
     preds = []
     loss_results = []
     for tries in param_sequence:
-        trials = load_obj('tmp')
+        trials = load_obj('0326/Y09_1')
         param = trials[tries]['params']
         param['metric']='l2'
         
@@ -81,7 +82,7 @@ if __name__ == '__main__':
         # split data and label
         train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
         train = pd.read_csv('data_raw/train.csv')
-        train_label = train_label_1.loc[:,'Y15']
+        train_label = train_label_1.loc[:,'Y09']
         
         # if for test sample
         train = pd.concat([train,test],axis=0).reset_index(drop=True)
@@ -98,8 +99,8 @@ if __name__ == '__main__':
         train = add_profile_v4(train, 'X31',N_T) # 온도
         train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
         
-        # test = train.iloc[4320:,:]
-        # train = train.iloc[:4320,:]
+        #test = train.iloc[4320:,:]
+        #train = train.iloc[:4320,:]
         
         test = train.iloc[4752:,:]
         train = train.iloc[:4320,:]
@@ -140,7 +141,7 @@ if __name__ == '__main__':
         preds.append(y_pred)
     
     y_pred = np.mean(preds,axis=0)
-    np.save('data_npy/Y15_pred_80day.npy',y_pred)
+    np.save('data_npy/Y09_pred_30day.npy',y_pred)
     
     # check performance
     # ref = pd.read_csv('submit/sample_submission_v26.csv')

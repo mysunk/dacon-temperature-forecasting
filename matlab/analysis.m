@@ -97,27 +97,8 @@ for i=0:100
     rmse_val = [rmse_val;immse(result, Y18)];
 end
 
-%% 시간대별로 residual을 다르게
-res_16_1 = [];
-res_16_2 = [];
-res_16_3 = [];
-res_16_4 = [];
-res_16_5 = [];
-for i=0:2
-    for j=0:143
-        if mod(j,144) <45
-           res_16_1 = [res_16_1 res(i*144+j+1,2)];
-        elseif  mod(j,144) <64
-           res_16_2 = [res_16_2 res(i*144+j+1,2)]; 
-        elseif  mod(j,144) <88
-           res_16_3 = [res_16_3 res(i*144+j+1,2)];
-        elseif  mod(j,144) <110
-           res_16_4 = [res_16_4 res(i*144+j+1,2)]; 
-        else
-           res_16_5 = [res_16_5 res(i*144+j+1,2)];
-        end
-    end
-end
+
+%%
 res_16_1 = mean(res_16_1);
 res_16_2 = mean(res_16_2);
 res_16_3 = mean(res_16_3);
@@ -159,3 +140,48 @@ legend(['ms_1';'ms_2';'sw__'])
 %%
 figure;
 plot(res_16)
+%%
+figure;
+plot(Y09)
+hold on
+plot(Y15)
+plot(Y16)
+plot(Y18)
+legend('1','2','3','4')
+%%
+figure;
+plot(Y15+1.7)
+hold on
+plot(Y18)
+
+%%
+figure;
+plot(res_additional)
+%%
+res_additional =res_additional  + 1.7;
+csvwrite('res_15_2.csv',res_15 )
+%% 시간대별로 residual을 다르게
+res = Y18 - Y15 - 1.7;
+res_additional= zeros(144,1);
+for i=0:2
+    for j=0:143
+        if mod(j,144) >= 64 && mod(j,144) <= 86
+            res_additional(j) = res_additional(j)+ res(i*144+j+1);
+        end
+    end
+end
+res_additional = res_additional/3;
+
+res_15 = repmat(res_additional, 80, 1);
+
+%%
+figure;
+plot(Y15 + repmat(res_additional,3,1)+1.7);
+hold on
+plot(Y18);
+
+%%
+figure;
+plot(Y09+1.7)
+hold on
+plot(Y18)
