@@ -7,18 +7,36 @@ Created on Wed Mar 25 19:20:08 2020
 from util import *
 import matplotlib.pyplot as plt
 
-#%% Load simulation result
+#%% lightgbm
 trials = load_obj('0326/Y09_1') # 1.8
-trials = load_obj('0326/Y10_1') # 2.4
-trials = load_obj('0326/Y11_1') # 3.0
 trials = load_obj('0326/Y15_1') # 1.06
 trials = load_obj('0326/Y16_1') # 1.48
 
-trials = load_obj('0326_2/Y09_2') # 1.88
-trials = load_obj('0326_2/Y10_2') # 2.41
-trials = load_obj('0326_2/Y11_2') # 2.98
-trials = load_obj('0326_2/Y15_2') # 1.13
-trials = load_obj('0326_2/Y16_2') # 1.53
+#%% svr
+trials = load_obj('0327/Y09') # 1.7
+trials = load_obj('0327/Y15') # 1.04
+trials = load_obj('0327/Y16') # 1.61
+
+#%% rf
+trials = load_obj('0328/Y16') # 1.37
+
+#%% result -- 3일치 , svr
+Y16_svr = np.load('data_pre/Y16_pred_3day_svr.npy')
+Y09_svr = np.load('data_pre/Y09_pred_3day_svr.npy')
+Y15_svr = np.load('data_pre/Y15_pred_3day_svr.npy')
+
+#%% result -- 3일치 , lgb
+Y16_lgb = np.load('data_pre/Y16_pred_3day_lgb.npy')
+Y09_lgb = np.load('data_pre/Y09_pred_3day_lgb.npy')
+Y15_lgb = np.load('data_pre/Y15_pred_3day_lgb.npy')
+Y18 = np.load('data_pre/Y18.npy')
+
+#%%
+plt.plot(Y16_lgb,'--')
+plt.plot(Y16_svr,'--')
+plt.plot(Y18,'--')
+plt.title('Y16')
+plt.legend(['lgb','svr','Y18'])
 
 #%%
 label = 'Y09'
@@ -96,7 +114,7 @@ y_pred_09 = y_pred_09 +1.7
 # tmp = y_pred + 0.8
 interv = range(6000,7000)
 plt.plot(y_pred[interv])
-plt.plot(ref_ms.Y18.values[interv])
+plt.plot(ref.Y18.values[interv])
 #%%
 ref = pd.read_csv('submit/sample_submission_v33.csv')
 ref_ms = pd.read_csv('submit/submit_6.csv')
@@ -108,3 +126,5 @@ mean_squared_error(ref_ms.Y18.values,y_pred)
 
 #%%
 y_pred = y_pred_15 * 0.5 + y_pred_16 * 0.3 + y_pred_09 * 0.2
+ref_ms.loc[:,'Y18'] = y_pred
+ref_ms.to_csv('submit/submit_7.csv',index=False)
