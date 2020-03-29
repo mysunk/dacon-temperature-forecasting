@@ -67,11 +67,13 @@ if __name__ == '__main__':
     # param = lgb_param() # pre-defined param
     
     # user
-    param_sequence = [32] 
-    sensor = 'Y16'
-    trials = load_obj('0327/'+sensor)
-    method = 'svr'
-    test_type = '3day' # '80day'
+    # trials = load_obj('0328/'+sensor)
+    # param_sequence = [19,44,11,21,45] 
+    sensor = 'Y15'
+    trials = load_obj('0328/Y15') # 0.83
+    param_sequence = [87]
+    method = 'rf'
+    test_type =  '80day'# '3day'
     save_name = 'data_pre/'+sensor+'_pred_'+test_type+'_'+method+'.npy'
     
     preds = []
@@ -115,7 +117,7 @@ if __name__ == '__main__':
             test = train.iloc[4752:,:]
             train = train.iloc[:4320,:]
         
-        # standart scaler
+        # transform
         scaler = StandardScaler()
         train.loc[:,:] = scaler.fit_transform(train.values)
         test.loc[:,:] = scaler.transform(test.values)
@@ -157,7 +159,7 @@ if __name__ == '__main__':
                     model.fit(x_train, y_train)
                 elif method == 'rf':
                     if not i: del param['metric']
-                    model = RandomForestRegressor(**param)
+                    model = RandomForestRegressor(n_jobs=-1,**param)
                     model.fit(x_train, y_train)
                 # for evaluation
                 train_pred = model.predict(x_train)

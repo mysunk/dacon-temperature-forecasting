@@ -102,25 +102,25 @@ end
 %%
 res_15 = res(:,2);
 %%
-res_15_1 = mean(res_15_1);
-res_15_2 = mean(res_15_2);
-res_15_3 = mean(res_15_3);
+res_09_1 = mean(res_09_1);
+res_09_2 = mean(res_09_2);
+res_09_3 = mean(res_09_3);
 % res_16_3 = res_16_3;
 % res_16_4 = mean(res_16_4);
 % res_16_5 = mean(res_16_5);
 %%
-res_15_1 = [];
-res_15_2 = [];
-res_15_3 = [];
+res_09_1 = [];
+res_09_2 = [];
+res_09_3 = [];
 for i=0:2
     for j=0:143
         if mod(j,144) <45
-           res_15_1 = [res_15_1, res_15(i*144+j+1)];
+           res_09_1 = [res_09_1, res_15(i*144+j+1)];
            % res_16(i*144+j+1) = res_16_3(mod(j,144)-64+1);
         elseif  mod(j,144) <110
-           res_15_2 = [res_15_2, res_15(i*144+j+1)];
+           res_09_2 = [res_09_2, res_15(i*144+j+1)];
         else
-           res_15_3 = [res_15_3, res_15(i*144+j+1)];
+           res_09_3 = [res_09_3, res_15(i*144+j+1)];
         end
     end
 end
@@ -129,17 +129,16 @@ res_15 = zeros(11520,1);
 for i=0:79
     for j=0:143
         if mod(j,144) <45
-           res_15(i*144+j+1) = res_15_1;
+           res_15(i*144+j+1) = res_09_1;
         elseif  mod(j,144) <110
-           res_15(i*144+j+1) = res_15_2;
+           res_15(i*144+j+1) = res_09_2;
         else
-           res_15(i*144+j+1) = res_15_3;
+           res_15(i*144+j+1) = res_09_3;
         end
     end
 end
-
 %%
-csvwrite('res_15.csv',res_15)
+csvwrite('res_09.csv',res_15)
 %%
 figure;
 plot(y_pred_1)
