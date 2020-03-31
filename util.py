@@ -115,6 +115,17 @@ def mse(y_pred, train_data): # custom score function
     score = mean_squared_error(y_true, y_pred)
     return 'mse_modified', score, False
 
+def mse_original(y_pred, train_data): # custom score function
+    '''
+    y_true: 실제 값
+    y_pred: 예측 값
+    '''
+    y_true = train_data.get_label()
+    
+    # multi-column일 경우에도 계산 할 수 있도록 np.average를 한번 더 씌움
+    score = mean_squared_error(y_true, y_pred)
+    return score
+
 
 def make_day_sample(data):
     if 'id' in data.columns:
@@ -174,3 +185,15 @@ def irradiance_difference(data):
             data_diff[i] = data[i+1] - data[i]
         
     return data_diff
+
+def process_dataset(data):
+    data['time'] = data.id.values % 144
+    data['X11_diff'] = irradiance_difference(data.X11.values) # 누적을 difference로 바꿈
+    data['X34_diff'] = irradiance_difference(data.X34.values)
+    
+    N_T = 12
+    N_S = 20
+    data = data.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+    data = add_profile_v4(data, 'X31',N_T) # 온도
+    data = add_profile_v4(data, 'X34_diff',N_S) # 일사량
+    return data

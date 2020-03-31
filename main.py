@@ -43,8 +43,9 @@ def eln_param():
          'l1_ratio':                0.1,
          'random_state' :           0,
          }
+    return eln_param
 
-def rf_param(self):
+def rf_param():
     rf_param =  {
         'max_depth':                10,
         'max_features':             10,
@@ -52,37 +53,40 @@ def rf_param(self):
         #'criterion':               hp.choice('criterion', ["gini", "entropy"]),
         'random_state' :            0,
        }
+    return rf_param
 
-def svr_param(self):
+def svr_param():
     svr_param = {
-        'kernel':                   'linear',
-        'C':                        1,
-        'gamma':                    1e-3,
-        'epsilon':                  0.2,
+        'kernel':                   'rbf',
+        'C':                        5.6,
+        'gamma':                    0.035,
+        'epsilon':                  0.23,
         'random_state' :           0,
         }
+    return svr_param
 
 if __name__ == '__main__':
     # load cv result
-    # param = lgb_param() # pre-defined param
-    
     # user
     # trials = load_obj('0328/'+sensor)
-    # param_sequence = [19,44,11,21,45] 
-    sensor = 'Y15'
-    trials = load_obj('0328/Y15') # 0.83
-    param_sequence = [87]
-    method = 'rf'
-    test_type =  '80day'# '3day'
-    save_name = 'data_pre/'+sensor+'_pred_'+test_type+'_'+method+'.npy'
+    sensor = 'Y13'
+    trials = load_obj('0329/Y13_svr')
+    param_num = 30
+    random_seeds = [0]
+    method = 'svr'
     
-    preds = []
+    test1_savename = 'data_pre/'+sensor+'_pred_3day_'+method+'.npy'
+    test2_savename = 'data_pre/'+sensor+'_pred_80day_'+method+'.npy'
+    
+    preds_all_test1 = []
+    preds_all_test2 = []
     loss_results = []
     
-    for tries in param_sequence:
+    for seeds in random_seeds:
         
-        param = trials[tries]['params']
+        param = trials[param_num]['params']
         param['metric']='l2'
+        # param['random_state'] = seeds
         
         # User
         N_T = 12
@@ -95,9 +99,8 @@ if __name__ == '__main__':
         train = pd.read_csv('data_raw/train.csv')
         train_label = train_label_1.loc[:,sensor]
         
-        if test_type == '80day':
-            train = pd.concat([train,test],axis=0).reset_index(drop=True)
         
+        train = pd.concat([train,test],axis=0).reset_index(drop=True)
         # add and delete feature
         train = train.loc[:,'id':'X39']
         drop_feature = ['id','X14','X16','X19']
@@ -110,17 +113,18 @@ if __name__ == '__main__':
         train = add_profile_v4(train, 'X31',N_T) # 온도
         train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
         
-        if test_type == '3day':
-            test = train.iloc[4320:,:]
-            train = train.iloc[:4320,:]
-        elif test_type == '80day':
-            test = train.iloc[4752:,:]
-            train = train.iloc[:4320,:]
-        
+        test1 = train.iloc[4320:4752,:]
+        test2 = train.iloc[4752:,:]
+        train = train.iloc[:4320,:]
+
+    
         # transform
         scaler = StandardScaler()
         train.loc[:,:] = scaler.fit_transform(train.values)
-        test.loc[:,:] = scaler.transform(test.values)
+        test1.loc[:,:] = scaler.transform(test1.values)
+        test2.loc[:,:] = scaler.transform(test2.values)
+        
+        
         #============================================= load & pre-processing ==================================================
         
         if nfold==0:
@@ -130,7 +134,8 @@ if __name__ == '__main__':
             y_pred = model.predict(test)
         else:
             losses = np.zeros((nfold,2)) # 0:train, 1:val
-            preds_test = []
+            preds_test1 = []
+            preds_test2 = []
             models = []
             kf = KFold(n_splits=nfold, random_state=None, shuffle=False)
             for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
@@ -167,16 +172,16 @@ if __name__ == '__main__':
                 losses[i,0]= mean_squared_error(y_train, train_pred)
                 losses[i,1]= mean_squared_error(y_test, valid_pred)
                 # test
-                preds_test.append(model.predict(test))
+                preds_test1.append(model.predict(test1))
+                preds_test2.append(model.predict(test2))
             # average k-fold results
-            y_pred = np.mean(preds_test, axis=0)
+            y_pred_test1 = np.mean(preds_test1, axis=0)
+            y_pred_test2 = np.mean(preds_test2, axis=0)
         loss_results.append(losses)
-        preds.append(y_pred)
-    y_pred = np.mean(preds,axis=0)
-    np.save(save_name,y_pred)
+        preds_all_test1.append(y_pred_test1)
+        preds_all_test2.append(y_pred_test2)
+    y_pred_test1 = np.mean(preds_all_test1,axis=0)
+    y_pred_test2 = np.mean(preds_all_test2,axis=0)
+    np.save(test1_savename,y_pred_test1)
+    np.save(test2_savename,y_pred_test2)
     
-    
-    """ other classifier
-    # rf
-    
-    """

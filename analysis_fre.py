@@ -6,74 +6,121 @@ Created on Wed Mar 25 19:20:08 2020
 """
 from util import *
 import matplotlib.pyplot as plt
-
-#%% lightgbm
+import numpy as np
+#%% lightgbm tuning result
 trials = load_obj('0326/Y09_1') # 1.8
 param_sequence = [22]
 trials = load_obj('0326/Y15_1') # 1.06
 param_sequence = [28,37,46,26,27]
 trials = load_obj('0326/Y16_1') # 1.48
 param_sequence = [36,28,27]
+trials = load_obj('0329/Y13_lgb') # 0.8
+param_sequence = [47]
 
-#%% svr
+#%% svr tuning result
 trials = load_obj('0327/Y09') # 1.7
 param_sequence = [43]
 trials = load_obj('0327/Y15') # 1.04
 param_sequence = [22,30,32,21,26]
 trials = load_obj('0327/Y16') # 1.61
 param_sequence = [32, 30]
-#%% rf
+trials = load_obj('0329/Y13_svr') # 0.76
+param_sequence = [25]
+#%% rf tuning result
 trials = load_obj('0328/Y09') # 1.79
 param_sequence = [89]
 trials = load_obj('0328/Y15') # 0.83
 param_sequence = [87]
 trials = load_obj('0328/Y16') # 1.37
 param_sequence = [19]
+trials = load_obj('0329/Y13_rf') # 0.75
+param_sequence = [30]
 
-#%% result -- 3일치 , svr
+#%% result -- 3일치
 Y16_svr = np.load('data_pre/Y16_pred_3day_svr.npy')
 Y09_svr = np.load('data_pre/Y09_pred_3day_svr.npy')
 Y15_svr = np.load('data_pre/Y15_pred_3day_svr.npy')
+Y13_svr = np.load('data_pre/Y13_pred_3day_svr.npy')
 
 # result -- 3일치 , lgb
 Y16_lgb = np.load('data_pre/Y16_pred_3day_lgb.npy')
 Y09_lgb = np.load('data_pre/Y09_pred_3day_lgb.npy')
 Y15_lgb = np.load('data_pre/Y15_pred_3day_lgb.npy')
+Y13_lgb = np.load('data_pre/Y13_pred_3day_lgb.npy')
 
 # result -- 3일치 , rf
 Y16_rf = np.load('data_pre/Y16_pred_3day_rf.npy')
 Y09_rf = np.load('data_pre/Y09_pred_3day_rf.npy')
 Y15_rf = np.load('data_pre/Y15_pred_3day_rf.npy')
-Y18 = np.load('data_pre/Y18.npy')
-
-#%% result -- 80일치
-Y16_svr = np.load('data_pre/Y16_pred_80day_svr.npy')
-Y09_svr = np.load('data_pre/Y09_pred_80day_svr.npy')
-Y15_svr = np.load('data_pre/Y15_pred_80day_svr.npy')
-
-# result -- 3일치 , lgb
-Y16_lgb = np.load('data_pre/Y16_pred_80day_lgb.npy')
-Y09_lgb = np.load('data_pre/Y09_pred_80day_lgb.npy')
-Y15_lgb = np.load('data_pre/Y15_pred_80day_lgb.npy')
-
-# result -- 3일치 , rf
-Y16_rf = np.load('data_pre/Y16_pred_80day_rf.npy')
-Y09_rf = np.load('data_pre/Y09_pred_80day_rf.npy')
-Y15_rf = np.load('data_pre/Y15_pred_80day_rf.npy')
+Y13_rf = np.load('data_pre/Y13_pred_3day_rf.npy')
 Y18 = np.load('data_pre/Y18.npy')
 
 Y09_mean = np.mean([Y09_lgb,Y09_svr,Y09_rf],axis=0)
 Y15_mean = np.mean([Y15_lgb,Y15_svr,Y15_rf],axis=0)
 Y16_mean = np.mean([Y16_lgb,Y16_svr,Y16_rf],axis=0)
+Y13_mean = np.mean([Y13_lgb,Y13_svr,Y13_rf],axis=0)
 
-#%%
-res_09 = pd.read_csv('matlab/res_09.csv',header=None)
-res_09 = res_09.values
-res_15 = pd.read_csv('matlab/res_15.csv',header=None)
-res_15 = res_15.values
-res_16 = pd.read_csv('matlab/res_16.csv',header=None)
-res_16 = res_16.values
-#%%
+train = np.vstack([Y18 - Y09_mean,Y18 -Y13_mean,Y18 -Y15_mean,Y18 -Y16_mean]).T
+np.save('3day_residual.npy',train)
+
+#%% result -- 80일치
+Y16_svr = np.load('data_pre/Y16_pred_80day_svr.npy')
+Y09_svr = np.load('data_pre/Y09_pred_80day_svr.npy')
+Y15_svr = np.load('data_pre/Y15_pred_80day_svr.npy')
+Y13_svr = np.load('data_pre/Y13_pred_80day_svr.npy')
+
+# result -- 
+Y16_lgb = np.load('data_pre/Y16_pred_80day_lgb.npy')
+Y09_lgb = np.load('data_pre/Y09_pred_80day_lgb.npy')
+Y15_lgb = np.load('data_pre/Y15_pred_80day_lgb.npy')
+Y13_lgb = np.load('data_pre/Y13_pred_80day_lgb.npy')
+
+# result -- 
+Y16_rf = np.load('data_pre/Y16_pred_80day_rf.npy')
+Y09_rf = np.load('data_pre/Y09_pred_80day_rf.npy')
+Y15_rf = np.load('data_pre/Y15_pred_80day_rf.npy')
+Y13_rf = np.load('data_pre/Y13_pred_80day_rf.npy')
+Y18 = np.load('data_pre/Y18.npy')
+
+Y09_mean = np.mean([Y09_lgb,Y09_svr,Y09_rf],axis=0)
+Y15_mean = np.mean([Y15_lgb,Y15_svr,Y15_rf],axis=0)
+Y16_mean = np.mean([Y16_lgb,Y16_svr,Y16_rf],axis=0)
+Y13_mean = np.mean([Y13_lgb,Y13_svr,Y13_rf],axis=0)
+"""
+Y09_res_rf = np.load('data_pre/Y09_80day_residual_rf.npy')
+Y13_res_rf = np.load('data_pre/Y13_80day_residual_rf.npy')
+Y15_res_rf = np.load('data_pre/Y15_80day_residual_rf.npy')
+Y16_res_rf = np.load('data_pre/Y16_80day_residual_rf.npy')
+
+Y09_res_svr = np.load('data_pre/Y09_80day_residual_svr.npy')
+Y13_res_svr= np.load('data_pre/Y13_80day_residual_svr.npy')
+Y15_res_svr= np.load('data_pre/Y15_80day_residual_svr.npy')
+Y16_res_svr= np.load('data_pre/Y16_80day_residual_svr.npy')
+
+Y18_1 = Y09_mean + Y09_res_rf * 0.7 + Y09_res_svr * 0.3
+Y18_2 = Y13_mean + Y13_res_rf * 0.7 + Y13_res_svr * 0.3
+Y18_3 = Y15_mean + Y15_res_rf * 0.7 + Y15_res_svr* 0.3
+Y18_4 = Y16_mean + Y16_res_rf * 0.7+ Y16_res_svr* 0.3
+"""
+Y13_res = np.load('data_pre/Y13_80day_residual_rf.npy')
+Y15_res = np.load('data_pre/Y15_80day_residual_rf.npy')
+Y16_res = np.load('data_pre/Y16_80day_residual_rf.npy')
+# res_svr = np.load('data_pre/80day_residual_svr.npy')
+
+Y18_1 = Y13_mean +  + Y13_res
+Y18_2 = Y15_mean +  + Y15_res
+Y18_3 = Y15_mean +  + Y16_res
+
+plt.plot(Y18_1[range(2000,3000)])
+plt.plot(Y18_2[range(2000,3000)])
+plt.plot(Y18_3[range(2000,3000)])
+
+#%% plot residual
+plt.plot(res_rf[:,1])
+# plt.plot(res_svr[:,0])
+
+mean_squared_error(res_rf[:,0],res_svr[:,0])
+#%% Make result
 offset = np.ravel(res_09)
 mean_squared_error(Y09_mean+offset, ref.Y18.values)
 
@@ -91,28 +138,23 @@ mean_squared_error(y_pred , ref.Y18.values)
 # mean_squared_error(ref_ms_prev.Y18.values , ref_ms.Y18.values)
 
 
-#%%
-ref = pd.read_csv('submit/sample_submission_v35.csv')
+#%% load reference
+ref = pd.read_csv('submit/sample_submission_v33.csv')
 ref_ms = pd.read_csv('submit/submit_7.csv')
 ref_ms_prev = pd.read_csv('submit/submit_6.csv')
 ref_ms.Y18 = y_pred
 ref_ms.to_csv('submit/submit_9.csv',index=False)
 
-#%%
-ref_ms_1 = pd.read_csv('submit/submit_8.csv')
-ref_ms_2 = pd.read_csv('submit/submit_9.csv')
-#%%
+#%% plot result -- 80일
 plt.plot(ref_ms_1.Y18.values[range(1500,2000)])
-plt.plot(ref_ms_2.Y18.values[range(1500,2000)])
-#%%
+plt.plot(ref_ms_2.Y18.values[range(1500,2000)])=
 plt.plot(y_pred[range(500,1000)])
 plt.plot(ref.Y18.values[range(500,1000)])
 
-#%% Y09
+#%% plot results -- 3일
 plt.figure()
 plt.plot(Y09_lgb,'--')
-plt.plot(Y09_svr,'--')
-plt.plot(Y09_rf,'--')
+plt.plot(Y09_svr,'--')plt.plot(Y09_rf,'--')
 plt.plot(Y18)
 plt.title('Y09')
 plt.legend(['lgb','svr','rf','Y18'])
@@ -135,10 +177,17 @@ plt.plot(Y18)
 plt.title('Y16')
 plt.legend(['lgb','svr','rf','Y18'])
 
-#%%
+# Y13
+plt.figure()
+plt.plot(Y13_lgb,'--')
+plt.plot(Y13_svr,'--')
+plt.plot(Y13_rf,'--')
+plt.plot(Y18)
+plt.title('Y13')
+plt.legend(['lgb','svr','rf','Y18'])
 
 
-#%%
+#%% to matlab
 tmp = pd.DataFrame({'Y09_lgb': Y09_lgb,'Y09_svr':Y09_svr,'Y09_rf':Y09_rf})
 tmp.to_csv('matlab/Y09.csv',index=False)
 tmp = pd.DataFrame({'Y15_lgb': Y15_lgb,'Y15_svr':Y15_svr,'Y15_rf':Y15_rf})
@@ -148,98 +197,151 @@ tmp.to_csv('matlab/Y16.csv',index=False)
 
 
 #%%
-label = 'Y09'
-import numpy as np
-import pandas as pd
-# plt.plot(np.load('data_npy/Y16_pred_3day.npy'))
-Y09 = np.load('data_npy/Y09_pred_3day.npy')
-Y15 = np.load('data_npy/Y15_pred_3day.npy')
-Y16 = np.load('data_npy/Y16_pred_3day.npy')
-plt.plot(tmp)
-plt.plot(Y18)
-plt.legend(['pred','Y18'])
-plt.title(label)
+train =  = np.vstack([Y09_mean,Y13_mean,Y15_mean,Y16_mean]).T
 
 #%%
-plt.plot(Y18 - tmp)
-train = pd.read_csv('data_raw/train.csv')
-train = train.iloc[4320:,:].reset_index(drop=True)
-# plt.plot(irradiance_difference(train.X34.values))
+# y_pred = Y18_1*0.25 +  Y18_2*0.25 +  Y18_3*0.25 +  Y18_4*0.25
+y_pred = Y18_1*0 +  Y18_2*0.3 +  Y18_3*0.7 +  Y18_4*0
+# y_pred = Y18_1*0.15 +  Y18_2*0.05 +  Y18_3*0.4 +  Y18_4*0.4
 
-
-#%%
-Y18 = pd.read_csv('data_raw/train.csv')
-Y18 = Y18.Y18.values[4320:]
-
-#%%
-train_label = pd.read_csv('data_raw/train.csv')
-plt.plot(train_label.Y09.iloc[0:300])
-plt.plot(train_label.Y16.iloc[0:300])
-plt.plot(train_label.Y15.iloc[0:300])
-
-#%%
-plt.plot(Y09)
-plt.plot(Y15)
-plt.plot(Y16)
-plt.plot(Y18)
-plt.legend(['Y09','Y15','Y16','Y18'])
-
-#%% replace outlier
-Ys = np.zeros((432,4))
-Ys[:,0] = Y09
-Ys[:,1] = Y15
-Ys[:,2] = Y16
-Ys[:,3] = Y18
-
-Ys = pd.DataFrame(Ys)
-Ys.to_csv('matlab/3day_Y.csv',index=False)
-#%%
-
-
-#%%
-Y15_res = pd.read_csv('matlab/res_15_2.csv',header=None)
-y_pred_15 = np.load('data_npy/Y15_pred_30day.npy')
-y_pred_15 = y_pred_15 + 1.7+ np.ravel(Y15_res.values)*0
-# 
-# tmp = y_pred + 0.8
-interv = range(5000,6000)
-plt.plot(tmp[interv])
+interv = range(8000,8500)
+# plt.plot(Y18_1[interv],':')
+# plt.plot(Y18_2[interv],':')
+# plt.plot(Y18_3[interv],':')
+# plt.plot(Y18_4[interv],':')
 plt.plot(ref.Y18.values[interv])
+plt.plot(ref_ms.Y18.values[interv])
+# plt.plot(ref_ms.Y18.values[interv])
+plt.plot(y_pred[interv])
+# plt.legend(['9','13','15','16','sw','predict'])
+plt.legend(['sw','ms','predict'])
+mean_squared_error(y_pred, ref_ms.Y18.values)
+mean_squared_error(y_pred, ref_prev.Y18.values)
+mean_squared_error(y_pred, ref.Y18.values)
+mse_AIFrenz(y_pred, ref.Y18.values)
 
 #%%
-# Y16_res = pd.read_csv('matlab/res_15_2.csv',header=None)
-y_pred_16 = np.load('data_npy/Y16_pred_30day.npy')
-y_pred_16 = y_pred_16 +1.7
-# 
-# tmp = y_pred + 0.8
-interv = range(5000,6000)
-plt.plot(tmp[interv])
-plt.plot(ref.Y18.values[interv])
+ref_prev = pd.read_csv('submit/sample_submission_v37.csv')
+
+ref_ms = pd.read_csv('submit/submit_8.csv')
+
 #%%
-# Y16_res = pd.read_csv('matlab/res_15_2.csv',header=None)
-y_pred_09 = np.load('data_npy/Y09_pred_30day.npy')
-y_pred_09 = y_pred_09 +1.7
-# 
-# tmp = y_pred + 0.8
-interv = range(6000,7000)
+ref_ms.Y18 = y_pred
+ref_ms.to_csv('submit/submit_10.csv',index=False)
+
+#%%
+ref = pd.read_csv('submit/sample_submission_v39.csv')
+y_pred = Y18_1*0.3 +  Y18_2*0.5 +  Y18_3*0.2
+
+interv = range(3500,4000)
+# plt.plot(Y18_1[interv],':')
+# plt.plot(Y18_2[interv],':')
+# plt.plot(Y18_3[interv],':')
+# plt.plot(Y18_4[interv],':')
 plt.plot(y_pred[interv])
 plt.plot(ref.Y18.values[interv])
-#%%
-ref = pd.read_csv('submit/sample_submission_v33.csv')
-ref_ms = pd.read_csv('submit/submit_6.csv')
-
-mse_AIFrenz(ref.Y18.values,y_pred)
-
-
-mean_squared_error(ref_ms.Y18.values,y_pred)
 
 #%%
-y_pred = y_pred_15 * 0.5 + y_pred_16 * 0.3 + y_pred_09 * 0.2
-ref_ms.loc[:,'Y18'] = y_pred
-ref_ms.to_csv('submit/submit_8.csv',index=False)
+
+plt.plot(Y13_res_svr[range(100,1000)])
+plt.plot(Y13_res_rf[range(100,1000)])
 
 #%%
-ref = pd.read_csv('submit/sample_submission_v35.csv')
-ref_ms = pd.read_csv('submit/submit_7.csv')
+plt.plot(preds[0][range(2000,3000),1])
+plt.plot(preds[1][range(2000,3000),1])
+plt.plot(preds[2][range(2000,3000),1])
+
+plt.plot(res_rf[range(500),2])
+
 #%%
 
+Y13_res_rf = np.load('data_pre/Y13_80day_residual_rf.npy')
+Y13_res_lgb = np.load('data_pre/Y13_80day_residual_lgb.npy')
+
+Y15_res = np.load('data_pre/Y15_80day_residual_rf.npy')
+
+#%%
+for i in range(9):
+    interv = range(i*1000,i*1000+500)
+    plt.figure()
+    plt.plot(Y13_res_rf[interv])
+    plt.plot(Y13_res_lgb[interv])
+
+#%%
+Y18_1 = Y13_mean + Y13_res
+mean_squared_error(Y18_1, ref.Y18.values)
+
+Y18_2 = Y15_mean + Y15_res
+mean_squared_error(Y18_2, ref.Y18.values)
+
+Y18_3 = Y16_mean + Y16_res
+mean_squared_error(Y18_3, ref.Y18.values)
+
+mean_squared_error(Y18_2, ref.Y18.values)
+y_pred = Y18_1 * 0.5 + Y18_2 * 0.5
+
+mean_squared_error(y_pred, ref.Y18.values)
+mean_squared_error(y_pred, ref_prev.Y18.values)
+mean_squared_error(y_pred, ref_ms.Y18.values)
+mean_squared_error(y_pred, ref_ms_prev.Y18.values)
+
+mean_squared_error(ref.Y18.values, ref_ms.Y18.values)
+
+#%%
+y_pred = Y18_1*0.6 +  Y18_2*0.4 +  Y18_3*0.0
+for i in range(9):
+    interv = range(i*1000,i*1000+500)
+    plt.figure()
+    plt.plot(y_pred[interv])
+    plt.plot(ref.Y18.values[interv])
+    # plt.plot(ref_ms_prev.Y18.values[interv])
+    plt.legend(['pred','sw','ms'])
+
+ref.iloc[:,1] = y_pred
+ref.to_csv('submit/submit_12.csv',index=False)
+#%%
+ref_prev = pd.read_csv('submit/sample_submission_v37.csv')
+ref = pd.read_csv('submit/sample_submission_v39.csv')
+ref_ms = pd.read_csv('submit/submit_10.csv')
+ref_ms_prev = pd.read_csv('submit/submit_8.csv')
+
+#%%
+
+Y16_svr = np.load('data_pre/Y16_pred_80day_svr.npy')
+Y09_svr = np.load('data_pre/Y09_pred_80day_svr.npy')
+Y15_svr = np.load('data_pre/Y15_pred_80day_svr.npy')
+Y13_svr = np.load('data_pre/Y13_pred_80day_svr.npy')
+
+# result -- 
+Y16_lgb = np.load('data_pre/Y16_pred_80day_lgb.npy')
+Y09_lgb = np.load('data_pre/Y09_pred_80day_lgb.npy')
+Y15_lgb = np.load('data_pre/Y15_pred_80day_lgb.npy')
+Y13_lgb = np.load('data_pre/Y13_pred_80day_lgb.npy')
+
+# result -- 
+Y16_rf = np.load('data_pre/Y16_pred_80day_rf.npy')
+Y09_rf = np.load('data_pre/Y09_pred_80day_rf.npy')
+Y15_rf = np.load('data_pre/Y15_pred_80day_rf.npy')
+Y13_rf = np.load('data_pre/Y13_pred_80day_rf.npy')
+Y18 = np.load('data_pre/Y18.npy')
+
+Y09_mean = np.mean([Y09_lgb,Y09_svr,Y09_rf],axis=0)
+Y15_mean = np.mean([Y15_lgb,Y15_svr,Y15_rf],axis=0)
+Y16_mean = np.mean([Y16_lgb,Y16_svr,Y16_rf],axis=0)
+Y13_mean = np.mean([Y13_lgb,Y13_svr,Y13_rf],axis=0)
+
+#%%
+Y_18_1 = Y09_mean + preds[4]
+Y_18_2 = Y13_mean + preds[0]
+Y_18_3 = Y15_mean + preds[1]
+Y_18_4 = Y16_mean + preds[2]
+
+
+#%%
+ref_ms = pd.read_csv('submit/submit_12.csv')
+y_pred = Y_18_1 * 0 + Y_18_2 * 0.6 + Y_18_3 * 0.4 + Y_18_4 * 0
+mean_squared_error(y_pred,ref.Y18.values)
+mean_squared_error(ref_ms.Y18.values,ref.Y18.values)
+
+plt.plot(y_pred[range(1000)])
+plt.plot(ref_ms.Y18.values[range(1000)])
