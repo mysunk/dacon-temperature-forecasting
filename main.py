@@ -68,12 +68,14 @@ def svr_param():
 if __name__ == '__main__':
     # load cv result
     # user
-    # trials = load_obj('0328/'+sensor)
-    sensor = 'Y13'
-    trials = load_obj('0329/Y13_svr')
-    param_num = 30
-    random_seeds = [0]
+    sensor = 'Y00'
     method = 'svr'
+    random_seeds = [0]
+    trials = load_obj('0330/'+sensor+'_'+method)
+    trials = sorted(trials, key=lambda k: k['loss'])
+    if np.isnan(trials[0]['loss']): del trials[0]
+    param_num = 0
+    nfold = 30
     
     test1_savename = 'data_pre/'+sensor+'_pred_3day_'+method+'.npy'
     test2_savename = 'data_pre/'+sensor+'_pred_80day_'+method+'.npy'

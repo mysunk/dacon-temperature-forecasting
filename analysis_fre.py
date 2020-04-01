@@ -36,6 +36,42 @@ param_sequence = [19]
 trials = load_obj('0329/Y13_rf') # 0.75
 param_sequence = [30]
 
+#%% 0330 results
+trials = load_obj('0330/Y00_rf') # 0.05
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y00_svr') # 0.02
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y00_lgb') # 0.22
+trials = sorted(trials, key=lambda k: k['loss'])
+
+trials = load_obj('0330/Y01_rf') # 0.86
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y01_svr') # 0.91
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y01_lgb') # 1.02
+trials = sorted(trials, key=lambda k: k['loss'])
+
+trials = load_obj('0330/Y02_rf') # 0.9
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y02_svr') # 0.88
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y02_lgb') # 0.99
+trials = sorted(trials, key=lambda k: k['loss'])
+
+trials = load_obj('0330/Y03_rf') # 0.62
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y03_svr') # 0.51
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y03_lgb') # 0.64
+trials = sorted(trials, key=lambda k: k['loss'])
+
+trials = load_obj('0330/Y04_rf') # 0.71
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y04_svr') # 0.46
+trials = sorted(trials, key=lambda k: k['loss'])
+trials = load_obj('0330/Y04_lgb') # 0.71
+trials = sorted(trials, key=lambda k: k['loss'])
+
 #%% result -- 3일치
 Y16_svr = np.load('data_pre/Y16_pred_3day_svr.npy')
 Y09_svr = np.load('data_pre/Y09_pred_3day_svr.npy')
@@ -68,6 +104,7 @@ Y16_svr = np.load('data_pre/Y16_pred_80day_svr.npy')
 Y09_svr = np.load('data_pre/Y09_pred_80day_svr.npy')
 Y15_svr = np.load('data_pre/Y15_pred_80day_svr.npy')
 Y13_svr = np.load('data_pre/Y13_pred_80day_svr.npy')
+Y00_svr = np.load('data_pre/Y00_pred_80day_svr.npy')
 
 # result -- 
 Y16_lgb = np.load('data_pre/Y16_pred_80day_lgb.npy')
@@ -80,9 +117,10 @@ Y16_rf = np.load('data_pre/Y16_pred_80day_rf.npy')
 Y09_rf = np.load('data_pre/Y09_pred_80day_rf.npy')
 Y15_rf = np.load('data_pre/Y15_pred_80day_rf.npy')
 Y13_rf = np.load('data_pre/Y13_pred_80day_rf.npy')
+Y00_rf = np.load('data_pre/Y00_pred_80day_rf.npy')
 Y18 = np.load('data_pre/Y18.npy')
 
-Y09_mean = np.mean([Y09_lgb,Y09_svr,Y09_rf],axis=0)
+Y00_mean = np.mean([Y00_svr,Y00_rf],axis=0)
 Y15_mean = np.mean([Y15_lgb,Y15_svr,Y15_rf],axis=0)
 Y16_mean = np.mean([Y16_lgb,Y16_svr,Y16_rf],axis=0)
 Y13_mean = np.mean([Y13_lgb,Y13_svr,Y13_rf],axis=0)
@@ -105,15 +143,32 @@ Y18_4 = Y16_mean + Y16_res_rf * 0.7+ Y16_res_svr* 0.3
 Y13_res = np.load('data_pre/Y13_80day_residual_rf.npy')
 Y15_res = np.load('data_pre/Y15_80day_residual_rf.npy')
 Y16_res = np.load('data_pre/Y16_80day_residual_rf.npy')
+Y00_res = np.load('data_pre/Y00_80day_residual_rf.npy')
 # res_svr = np.load('data_pre/80day_residual_svr.npy')
 
-Y18_1 = Y13_mean +  + Y13_res
-Y18_2 = Y15_mean +  + Y15_res
-Y18_3 = Y15_mean +  + Y16_res
+Y18_00 = Y00_rf +  + Y00_res
+Y18_13 = Y13_mean +  + Y13_res
+Y18_15 = Y15_mean +  + Y15_res
 
-plt.plot(Y18_1[range(2000,3000)])
-plt.plot(Y18_2[range(2000,3000)])
-plt.plot(Y18_3[range(2000,3000)])
+plt.plot(Y18_00[range(2000,3000)])
+plt.plot(Y18_13[range(2000,3000)])
+plt.plot(Y18_15[range(2000,3000)])
+
+#%%
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+ref = pd.read_csv('submit/submit_11.csv')
+mean_squared_error(Y18_00,ref.Y18.values)
+
+mean_squared_error(Y18_00,Y18_15)
+
+#%%
+for i in range(20):
+    plt.figure()
+    interv = range(i*500,i*500+500)
+    plt.plot(Y18_00[interv])
+    plt.plot(Y18_13[interv])
+    plt.plot(Y18_15[interv])
+    plt.plot(ref.Y18.values[interv])
 
 #%% plot residual
 plt.plot(res_rf[:,1])
@@ -325,10 +380,14 @@ Y15_rf = np.load('data_pre/Y15_pred_80day_rf.npy')
 Y13_rf = np.load('data_pre/Y13_pred_80day_rf.npy')
 Y18 = np.load('data_pre/Y18.npy')
 
+Y00_svr = np.load('data_pre/Y00_pred_80day_svr.npy')
+Y00_rf = np.load('data_pre/Y00_pred_80day_rf.npy')
+
 Y09_mean = np.mean([Y09_lgb,Y09_svr,Y09_rf],axis=0)
 Y15_mean = np.mean([Y15_lgb,Y15_svr,Y15_rf],axis=0)
 Y16_mean = np.mean([Y16_lgb,Y16_svr,Y16_rf],axis=0)
 Y13_mean = np.mean([Y13_lgb,Y13_svr,Y13_rf],axis=0)
+Y00_mean = np.mean([Y00_svr,Y00_rf],axis=0)
 
 #%%
 Y_18_1 = Y09_mean + preds[4]
@@ -338,10 +397,19 @@ Y_18_4 = Y16_mean + preds[2]
 
 
 #%%
-ref_ms = pd.read_csv('submit/submit_12.csv')
+ref_ms = pd.read_csv('submit/submit_11.csv')
 y_pred = Y_18_1 * 0 + Y_18_2 * 0.6 + Y_18_3 * 0.4 + Y_18_4 * 0
-mean_squared_error(y_pred,ref.Y18.values)
+mean_squared_error(y_pred,ref_ms.Y18.values)
 mean_squared_error(ref_ms.Y18.values,ref.Y18.values)
 
 plt.plot(y_pred[range(1000)])
 plt.plot(ref_ms.Y18.values[range(1000)])
+
+#%%
+
+Y00_rf = np.load('data_pre/Y00_pred_80day_rf.npy')
+res = np.load('data_pre/residual/Y00_80day_residual_rf.npy')
+y_pred = Y00_rf + res
+
+ref_ms.Y18 = y_pred
+ref_ms.to_csv('submit/submit_14.csv',index=False)

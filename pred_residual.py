@@ -33,15 +33,16 @@ def rf_param():
         'max_features':             5,
         'n_estimators':             1000,
         #'criterion':               hp.choice('criterion', ["gini", "entropy"]),
-        'random_state' :            1,
+        'random_state' :            0,
        }
     return rf_param
 
 # user
 label = 'Y13'
-trials= load_obj('0331/Y13_residual')
-param = trials[18]['params']
-param['max_depth'] = 8
+# trials= load_obj('0331/Y13_residual')
+# param = trials[18]['params']
+# param['max_depth'] = 8
+param = rf_param()
 method = 'rf'
 nfold = 3
 # param['max_depth']=1
@@ -49,9 +50,9 @@ nfold = 3
 train = pd.read_csv('data_pre/train_2.csv')
 train = train.values
 data = []
-data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
+# data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
 data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
-data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
+# data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
 
 Y18 = np.load('data_pre/Y18.npy')
 data = np.mean(data,axis=0)
@@ -108,16 +109,19 @@ else:
         preds.append(test_pred)
 
 #%% analysis result
-y_pred = np.mean(preds,axis=0)
-ref = np.load('data_pre/Y13_80day_residual_rf.npy')
-for i in range(21):
-    plt.figure()
-    plt.plot(y_pred[range(500*i,500*i+500)])
-    plt.plot(ref[range(500*i,500*i+500)])
-# np.save('data_pre/residual/Y13_80day_residual_rf.npy',np.mean(preds,axis=0))
+# y_pred = np.mean(preds,axis=0)
+# ref = np.load('data_pre/Y13_80day_residual_rf.npy')
+# for i in range(21):
+#     plt.figure()
+#      plt.plot(y_pred[range(500*i,500*i+500)])
+#      plt.plot(ref[range(500*i,500*i+500)])
+# np.save('data_pre/Y00_80day_residual_rf.npy',np.mean(preds,axis=0))
 
 #%%
-plt.figure()
-plt.plot(val)
-plt.plot(train_label)
+# plt.figure()
+# plt.plot(train_label)
+# plt.plot(val)
+# plt.legend(['Y18-Y15_pred','residual_predict'])
+
+    
     
