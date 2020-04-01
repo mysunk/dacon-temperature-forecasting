@@ -19,6 +19,10 @@ from sklearn.ensemble import RandomForestRegressor
 import lightgbm as lgb
 from sklearn.svm import SVR
 
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 class Tuning_model(object):
     
@@ -101,6 +105,7 @@ class Tuning_model(object):
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
     def rf_cv(self, params, train_set, nfolds):
+        params = make_param_int(params,['n_estimators','max_features','max_depth'])
         model = RandomForestRegressor(**params)
         score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
