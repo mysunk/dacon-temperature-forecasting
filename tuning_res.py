@@ -20,6 +20,10 @@ import lightgbm as lgb
 from sklearn.svm import SVR
 from sklearn.multioutput import MultiOutputRegressor
 
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 class Tuning_model(object):
     
@@ -104,7 +108,11 @@ class Tuning_model(object):
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
     def rf_cv(self, params, train_set, nfolds):
+<<<<<<< HEAD:tuning_residual.py
         params = make_param_int(params,['max_depth','max_features','n_estimators','min_samples_split','min_samples_leaf'])
+=======
+        params = make_param_int(params,['n_estimators','max_features','max_depth'])
+>>>>>>> b990d3e9f7c9bcaf967bebae92b6485e04072bbc:tuning.py
         model = RandomForestRegressor(**params)
         # score= make_scorer(mean_squared_error, greater_is_better=True)
         score= make_scorer(mse_AIFrenz, greater_is_better=True)
