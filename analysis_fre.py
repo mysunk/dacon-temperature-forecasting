@@ -413,3 +413,71 @@ y_pred = Y00_rf + res
 
 ref_ms.Y18 = y_pred
 ref_ms.to_csv('submit/submit_14.csv',index=False)
+
+#%%
+sensor = 'Y01'
+lgb_tmp = np.load('data_pre/'+sensor+'_pred_3day_lgb.npy')
+rf_tmp = np.load('data_pre/'+sensor+'_pred_3day_rf.npy')
+svr_tmp = np.load('data_pre/'+sensor+'_pred_3day_svr.npy')
+Y18 = np.load('data_pre/Y18.npy')
+
+plt.figure()
+plt.plot(lgb_tmp)
+plt.plot(rf_tmp)
+plt.plot(svr_tmp)
+plt.plot(Y18)
+plt.legend(['lgb','rf','svr'])
+
+#%%
+sensor = 'Y03'
+lgb_tmp = np.load('data_pre/'+sensor+'_pred_80day_lgb.npy')
+rf_tmp = np.load('data_pre/'+sensor+'_pred_80day_rf.npy')
+svr_tmp = np.load('data_pre/'+sensor+'_pred_80day_svr.npy')
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+ref = ref.Y18.values
+interv = range(3000,4000)
+plt.figure()
+plt.plot(lgb_tmp[interv])
+plt.plot(rf_tmp[interv])
+plt.plot(svr_tmp[interv])
+# plt.plot(ref[interv])
+plt.legend(['lgb','rf','svr'])
+# tmp = svr_tmp * 0.1 + rf_tmp * 0.3 + lgb_tmp*0.1
+# plt.plot(tmp[interv])
+
+#%%
+tmp = np.load('data_pre/Y18_pred_Y00.npy')
+interv = range(4000,5000)
+plt.plot(tmp[interv])
+plt.plot(ref[interv])
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+ref = ref.Y18.values
+mean_squared_error(tmp, ref)
+
+#%%
+Y18_13 = np.load('data_pre/Y18_pred_Y13.npy')
+Y18_00 = np.load('data_pre/Y18_pred_Y00.npy')
+
+#%%
+ref = pd.read_csv('submit/sample_submission_v39.csv')
+ref = ref.Y18.values
+
+ref_prev = pd.read_csv('submit/submit_11.csv')
+ref_prev = ref_prev.Y18.values
+
+interv = range(6000,7000)
+plt.plot(Y18_00[interv])
+plt.plot(Y18_13[interv])
+plt.plot(ref[interv])
+plt.plot(ref_prev[interv])
+mean_squared_error(ref_prev, Y18_13)
+
+
+#%% 1216,1222
+import pandas as pd
+tmp = pd.read_csv('data_pre/train_1.csv')
+tmp = pd.read_csv('data_pre/test.csv')
+plt.plot(tmp.loc[:,'X34_diff'])
+
+#%%
+plt.plot(tmp.loc[:,'X34_diff'])

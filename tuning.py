@@ -42,7 +42,7 @@ class Tuning_model(object):
     
     def rf_space(self):
         self.space =  {
-            'max_depth':                2,
+            'max_depth':                hp.quniform('max_iter',1, 20,1),
             'min_samples_leaf':         hp.quniform('min_samples_leaf', 1,10,1),
             'max_features':             hp.quniform('max_features', 2,39,1),
             'min_samples_split':        hp.quniform('min_samples_split', 1,10,1),
@@ -53,10 +53,10 @@ class Tuning_model(object):
     
     def svr_space(self):
         self.space = {
-            'kernel':                   hp.choice('kernel',['linear', 'rbf','poly']),
+            'kernel':                   hp.choice('kernel',['rbf']),
             'C':                        hp.uniform('C',1,10),
             'gamma':                    hp.loguniform('gamma',np.log(1e-7),np.log(1e-1)),
-            'epsilon':                  hp.uniform('epsilon',0.1,0.9),
+            'epsilon':                  hp.uniform('epsilon',0,0.9),
             }
         
     def lgb_space(self):
@@ -108,14 +108,10 @@ class Tuning_model(object):
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
     def rf_cv(self, params, train_set, nfolds):
-<<<<<<< HEAD:tuning_residual.py
         params = make_param_int(params,['max_depth','max_features','n_estimators','min_samples_split','min_samples_leaf'])
-=======
-        params = make_param_int(params,['n_estimators','max_features','max_depth'])
->>>>>>> b990d3e9f7c9bcaf967bebae92b6485e04072bbc:tuning.py
-        model = RandomForestRegressor(**params)
+        model = RandomForestRegressor(n_jobs=-1, **params)
         # score= make_scorer(mean_squared_error, greater_is_better=True)
-        score= make_scorer(mse_AIFrenz, greater_is_better=True)
+        score= make_scorer(mean_squared_error, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         cv_loss = np.mean(cv_results)
         print('k-fold loss is',cv_results)
@@ -130,19 +126,6 @@ class Tuning_model(object):
         print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
-    """
-    def lgb_cv(self, params, train_set, nfolds):
-        params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
-                                     'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
-        # cv_results = lgb.cv(params, train_set, num_boost_round=1000,nfold=nfolds,stratified=True,verbose_eval=True,
-        #                     feval=mse_AIFrenz_lgb, early_stopping_rounds=10)
-        dtrain = lgb.Dataset(train_set[0], label = train_set[1])
-        cv_results = lgb.cv(params, dtrain, num_boost_round=100,nfold=nfolds,stratified=False,verbose_eval=True,
-                             metrics="l2", early_stopping_rounds=10)
-        best_loss = min(cv_results['l2-mean'])
-        # Dictionary with information for evaluation
-        return {'loss': best_loss, 'params': params, 'status': STATUS_OK}
-    """
     def lgb_cv(self, params, train_set, nfolds): # 실제 학습이랑 성능 차이가 너무 심해서..
         params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
                                      'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
@@ -176,23 +159,32 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--method', default='rf', choices=['lgb', 'eln', 'rf','svr'])
     parser.add_argument('--max_evals', default=30,type=int)
-    parser.add_argument('--save_file', default='0331/Y13_residual')
-    parser.add_argument('--nfold', default=16,type=int)
-    parser.add_argument('--label', default='Y13')
+    parser.add_argument('--save_file', default='0402/Y15_rf')
+    parser.add_argument('--nfold', default=30,type=int)
+    parser.add_argument('--label', default='Y15')
     args = parser.parse_args()
     
     label = args.label
-    train = pd.read_csv('data_pre/train_2.csv')
+    train = pd.read_csv('data_raw/train.csv')
+    train = train.iloc[:4320,:]
+    train_label = train.loc[:,label]
+    train = train.loc[:,'id':'X39']
+    train['time'] = train.id.values % 144
+    tmp = pd.read_csv('data_raw/train_X34_diff.csv')
+    tmp = tmp.iloc[:4320,:]
+    train['X34_diff'] = tmp.iloc[:,1].values
     
-    data = []
-    data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
-    data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
-    data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
     
-    Y18 = np.load('data_pre/Y18.npy')
-    data = np.mean(data,axis=0)
-    train_label = Y18 - data
-
+    N_T = 12
+    N_S = 20
+    train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+    train = add_profile_v4(train, 'X31',N_T) # 온도
+    train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
+    
+    train = train.values
+    train_label = train_label.values
+    
+    
     # main
     clf = args.method
     bayes_trials = Trials()

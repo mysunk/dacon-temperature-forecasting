@@ -68,122 +68,109 @@ def svr_param():
 if __name__ == '__main__':
     # load cv result
     # user
-    sensor = 'Y00'
-    method = 'svr'
-    random_seeds = [0]
-    trials = load_obj('0330/'+sensor+'_'+method)
-    trials = sorted(trials, key=lambda k: k['loss'])
-    if np.isnan(trials[0]['loss']): del trials[0]
-    param_num = 0
-    nfold = 30
-    
-    test1_savename = 'data_pre/'+sensor+'_pred_3day_'+method+'.npy'
-    test2_savename = 'data_pre/'+sensor+'_pred_80day_'+method+'.npy'
-    
-    preds_all_test1 = []
-    preds_all_test2 = []
-    loss_results = []
-    
-    for seeds in random_seeds:
-        
-        param = trials[param_num]['params']
-        param['metric']='l2'
-        # param['random_state'] = seeds
-        
-        # User
-        N_T = 12
-        N_S = 20
+    for sensor in ['Y00','Y01','Y02','Y03','Y04']:
+        # sensor = 'Y01'
+        method = 'svr'
+        random_seeds = [0,1,2,3,4,5,6,7,8,9,10]
+        trials = load_obj('0330/'+sensor+'_'+method)
+        trials = sorted(trials, key=lambda k: k['loss'])
+        if np.isnan(trials[0]['loss']): del trials[0]
+        param_num = 0
         nfold = 30
         
-        #============================================= load & pre-processing ==================================================
-        # split data and label
-        train_1, train_2, train_label_1, train_label_2, test, sample = load_dataset('data_raw/')
-        train = pd.read_csv('data_raw/train.csv')
-        train_label = train_label_1.loc[:,sensor]
+        test1_savename = 'data_pre/'+sensor+'_pred_3day_'+method+'.npy'
+        test2_savename = 'data_pre/'+sensor+'_pred_80day_'+method+'.npy'
         
+        preds_all_test1 = []
+        preds_all_test2 = []
+        loss_results = []
         
-        train = pd.concat([train,test],axis=0).reset_index(drop=True)
-        # add and delete feature
-        train = train.loc[:,'id':'X39']
-        drop_feature = ['id','X14','X16','X19']
-        time = train.id.values % 144
-        train = train.drop(columns = drop_feature)
-        train['X11_diff'] = irradiance_difference(train.X11.values) # 누적을 difference로 바꿈
-        train['X34_diff'] = irradiance_difference(train.X34.values)
-        train['time'] = time
-        train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
-        train = add_profile_v4(train, 'X31',N_T) # 온도
-        train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
-        
-        test1 = train.iloc[4320:4752,:]
-        test2 = train.iloc[4752:,:]
-        train = train.iloc[:4320,:]
-
-    
-        # transform
-        scaler = StandardScaler()
-        train.loc[:,:] = scaler.fit_transform(train.values)
-        test1.loc[:,:] = scaler.transform(test1.values)
-        test2.loc[:,:] = scaler.transform(test2.values)
-        
-        
-        #============================================= load & pre-processing ==================================================
-        
-        if nfold==0:
-            dtrain = lgb.Dataset(train, label=train_label)
-            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True,
-                                         early_stopping_rounds=10)
-            y_pred = model.predict(test)
-        else:
-            losses = np.zeros((nfold,2)) # 0:train, 1:val
-            preds_test1 = []
-            preds_test2 = []
-            models = []
-            kf = KFold(n_splits=nfold, random_state=None, shuffle=False)
-            for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
-                print(i,'th fold training')
-                # train test split
-                if isinstance(train, (np.ndarray, np.generic) ): # if numpy array
-                    x_train = train[train_index]
-                    y_train = train_label[train_index]
-                    x_test = train[test_index]
-                    y_test = train_label[test_index]
-                else: # if dataframe
-                    x_train = train.iloc[train_index]
-                    y_train = train_label.iloc[train_index]
-                    x_test = train.iloc[test_index]
-                    y_test = train_label.iloc[test_index]
-                
-                # w.r.t method
-                if method == 'lgb':
-                    dtrain = lgb.Dataset(x_train, label=y_train)
-                    dvalid = lgb.Dataset(x_test, label=y_test)
-                    model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
+        for seeds in random_seeds:
+            
+            param = trials[param_num]['params']
+            param['metric']='l2'
+            if not method is 'svr': param['random_state'] = seeds
+            
+            # User
+            label = sensor
+            train = pd.read_csv('data_raw/train.csv')
+            train = train.iloc[:4320,:]
+            train_label = train.loc[:,label]
+            train = train.loc[:,'id':'X39']
+            train['time'] = train.id.values % 144
+            tmp = pd.read_csv('data_raw/train_X34_diff.csv')
+            tmp = tmp.iloc[:4320,:]
+            train['X34_diff'] = tmp.iloc[:,1].values
+            
+            
+            N_T = 12
+            N_S = 20
+            train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+            train = add_profile_v4(train, 'X31',N_T) # 온도
+            train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
+            
+            train = train.values
+            train_label = train_label.values
+            
+            #============================================= load & pre-processing ==================================================
+            
+            if nfold==0:
+                dtrain = lgb.Dataset(train, label=train_label)
+                model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True,
                                              early_stopping_rounds=10)
-                elif method == 'svr':
-                    if not i: del param['metric']
-                    model = SVR(**param)
-                    model.fit(x_train, y_train)
-                elif method == 'rf':
-                    if not i: del param['metric']
-                    model = RandomForestRegressor(n_jobs=-1,**param)
-                    model.fit(x_train, y_train)
-                # for evaluation
-                train_pred = model.predict(x_train)
-                valid_pred = model.predict(x_test)
-                losses[i,0]= mean_squared_error(y_train, train_pred)
-                losses[i,1]= mean_squared_error(y_test, valid_pred)
-                # test
-                preds_test1.append(model.predict(test1))
-                preds_test2.append(model.predict(test2))
-            # average k-fold results
-            y_pred_test1 = np.mean(preds_test1, axis=0)
-            y_pred_test2 = np.mean(preds_test2, axis=0)
-        loss_results.append(losses)
-        preds_all_test1.append(y_pred_test1)
-        preds_all_test2.append(y_pred_test2)
-    y_pred_test1 = np.mean(preds_all_test1,axis=0)
-    y_pred_test2 = np.mean(preds_all_test2,axis=0)
-    np.save(test1_savename,y_pred_test1)
-    np.save(test2_savename,y_pred_test2)
-    
+                y_pred = model.predict(test)
+            else:
+                losses = np.zeros((nfold,2)) # 0:train, 1:val
+                preds_test1 = []
+                preds_test2 = []
+                models = []
+                kf = KFold(n_splits=nfold, random_state=None, shuffle=False)
+                for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
+                    print(i,'th fold training')
+                    # train test split
+                    if isinstance(train, (np.ndarray, np.generic) ): # if numpy array
+                        x_train = train[train_index]
+                        y_train = train_label[train_index]
+                        x_test = train[test_index]
+                        y_test = train_label[test_index]
+                    else: # if dataframe
+                        x_train = train.iloc[train_index]
+                        y_train = train_label.iloc[train_index]
+                        x_test = train.iloc[test_index]
+                        y_test = train_label.iloc[test_index]
+                    
+                    # w.r.t method
+                    if method == 'lgb':
+                        dtrain = lgb.Dataset(x_train, label=y_train)
+                        dvalid = lgb.Dataset(x_test, label=y_test)
+                        model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
+                                                 early_stopping_rounds=10)
+                    elif method == 'svr':
+                        if not i: del param['metric']
+                        model = SVR(**param)
+                        model.fit(x_train, y_train)
+                    elif method == 'rf':
+                        if not i: del param['metric']
+                        model = RandomForestRegressor(n_jobs=-1,**param)
+                        model.fit(x_train, y_train)
+                    # for evaluation
+                    train_pred = model.predict(x_train)
+                    valid_pred = model.predict(x_test)
+                    losses[i,0]= mean_squared_error(y_train, train_pred)
+                    losses[i,1]= mean_squared_error(y_test, valid_pred)
+                    # test
+                    preds_test1.append(model.predict(test1))
+                    preds_test2.append(model.predict(test2))
+                # average k-fold results
+                y_pred_test1 = np.mean(preds_test1, axis=0)
+                y_pred_test2 = np.mean(preds_test2, axis=0)
+            loss_results.append(losses)
+            preds_all_test1.append(y_pred_test1)
+            preds_all_test2.append(y_pred_test2)
+            if method == 'svr': break # 한 번만 돌리고 멈춤
+        y_pred_test1 = np.mean(preds_all_test1,axis=0)
+        y_pred_test2 = np.mean(preds_all_test2,axis=0)
+        np.save(test1_savename,y_pred_test1)
+        np.save(test2_savename,y_pred_test2)
+        
+        

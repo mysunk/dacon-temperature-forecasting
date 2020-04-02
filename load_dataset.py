@@ -21,11 +21,6 @@ train_label_2 = train.loc[4320:4751,'Y18']
 train = train.loc[:,'id':'X39']
 test = test.loc[:,'id':'X39'].reset_index(drop=True)
 
-# match scale
-scaler = StandardScaler()
-train.iloc[:,1:] = scaler.fit_transform(train.values[:,1:])
-test.iloc[:,1:] = scaler.transform(test.values[:,1:])
-
 X = pd.concat([train,test],axis=0).reset_index(drop=True) # 합침
 X = process_dataset(X)
 train_1 = X.iloc[:4320,:]
@@ -40,7 +35,7 @@ train_label_1.to_csv('data_pre/train_label_1.csv',index=False)
 train_label_2.to_csv('data_pre/train_label_2.csv',index=False)
 
 #%%
-"""
+
 train = pd.read_csv('data_raw/train.csv')
 #train_label = pd.read_csv('data_npy/Y_18_trial_1.csv')
 
@@ -65,4 +60,12 @@ train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
 # match scale
 scaler = StandardScaler()
 train.loc[:,:] = scaler.fit_transform(train.values)
-"""
+
+
+#%%
+get_ipython().run_line_magic('matplotlib', 'inline')
+get_ipython().run_line_magic('matplotlib', 'qt')
+
+#%%
+tmp = irradiance_difference(train.X34.values)
+tmp = np.reshape(tmp, (-1,144))

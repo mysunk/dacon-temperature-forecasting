@@ -186,6 +186,19 @@ def irradiance_difference(data):
         
     return data_diff
 
+def irradiance_difference_v2(data):
+    data_diff = np.zeros(data.shape)
+    
+    for i in range(1,len(data)-1):
+        if i%144==143 or i%144 == 0:
+            # print(i)
+            data_diff[i] = 0
+        else:
+            
+            data_diff[i] = data[i+1] - data[i]
+        
+    return data_diff
+
 def process_dataset(data):
     data['time'] = data.id.values % 144
     data['X11_diff'] = irradiance_difference(data.X11.values) # 누적을 difference로 바꿈
