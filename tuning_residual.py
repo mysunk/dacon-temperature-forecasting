@@ -42,7 +42,7 @@ class Tuning_model(object):
     
     def rf_space(self):
         self.space =  {
-            'max_depth':                hp.quniform('max_iter',1, 10,1),
+            'max_depth':                hp.quniform('max_iter',1, 5,1),
             'min_samples_leaf':         hp.quniform('min_samples_leaf', 1,10,1),
             'max_features':             hp.quniform('max_features', 2,39,1),
             'min_samples_split':        hp.quniform('min_samples_split', 1,10,1),
@@ -79,7 +79,7 @@ class Tuning_model(object):
             "min_sum_hessian_in_leaf": hp.quniform('min_sum_hessian_in_leaf',       5, 15, 1), 
             'random_state':             self.random_state,
             'n_jobs':                   -1,
-            'metrics':                  'l2'
+            'metrics':                  'None'
         }
             
     # optimize
@@ -99,7 +99,7 @@ class Tuning_model(object):
     def eln_cv(self, params, train_set, nfolds):
         params = make_param_int(params, ['max_iter'])
         model = ElasticNet(**params)
-        score= make_scorer(mean_squared_error, greater_is_better=True)
+        score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         # print(cv_results)
         cv_loss = np.mean(cv_results)
@@ -120,8 +120,8 @@ class Tuning_model(object):
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
     
     def svr_cv(self, params, train_set, nfolds):
-        model =MultiOutputRegressor(SVR(**params))
-        score= make_scorer(mean_squared_error, greater_is_better=True)
+        model =SVR(**params)
+        score= make_scorer(mse_AIFrenz, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         cv_loss = np.mean(cv_results)
         print('k-fold loss is',cv_results)
@@ -161,9 +161,9 @@ class Tuning_model(object):
             dtrain = lgb.Dataset(x_train, label=y_train)
             dvalid = lgb.Dataset(x_test, label=y_test)
             model = lgb.train(params, train_set = dtrain,  
-                              valid_sets=[dtrain, dvalid],num_boost_round=1000,verbose_eval=False,
+                              valid_sets=[dtrain, dvalid],num_boost_round=1000,verbose_eval=False,feval=mse_AIFrenz_lgb,
                                      early_stopping_rounds=10)
-            losses.append(model.best_score['valid_1']['l2'])
+            losses.append(model.best_score['valid_1']['mse_modified'])
         return {'loss': np.mean(losses,axis=0),'params':params ,'status': STATUS_OK}
     
 if __name__ == '__main__':
@@ -171,27 +171,24 @@ if __name__ == '__main__':
     # load config
     parser = argparse.ArgumentParser(description='Dacon temperature regression',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
-    parser.add_argument('--max_evals', default=1000,type=int)
-    parser.add_argument('--save_file', default='tmp_3')
-    parser.add_argument('--nfold', default=16,type=int)
-    parser.add_argument('--label', default='Y15')
+    parser.add_argument('--method', default='rf', choices=['lgb', 'eln', 'rf','svr'])
+    parser.add_argument('--max_evals', default=50,type=int)
+    parser.add_argument('--save_file', default='tmp')
+    parser.add_argument('--nfold', default=10,type=int)
+    parser.add_argument('--label', default='Y01')
     args = parser.parse_args()
     
     label = args.label
-    train = pd.read_csv('data_pre/train_2.csv')
+    train, train_label = load_dataset_v2('train2',12, 20, True)
+    del train['time']
     
     data = []
     data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
     data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
     data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
     
-    Y18 = np.load('data_pre/Y18.npy')
-    data = np.array(data) 
-    # weight = np.array([0.1, 0.6, 0.3])
-    weight = np.array([0.3, 0.5, 0.2])
-    data = data[0] * weight[0] + data[1] * weight[1] + data[2] * weight[2]
-    train_label = Y18 - data
+    data = np.mean(data, axis=0)
+    train_label = train_label.values - data
     train = train.values
 
     # main

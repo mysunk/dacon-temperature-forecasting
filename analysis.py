@@ -45,6 +45,9 @@ plot_feature_2(train_1, 'X01',range(2))
 plot_features(train_2, ['X00','X07','X28','X31','X32'], range(3))
 plot_features(train_label_2, train_label_1.columns[1:10], range(5))
 
+#%%
+test = pd.read_csv('data_raw/test.csv')
+plt.plot(irradiance_difference(test['X11'].values))
 
 
 #%% 모든 feature들 n일간

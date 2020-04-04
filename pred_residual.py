@@ -4,6 +4,7 @@ Created on Sun Mar 29 15:55:26 2020
 
 @author: guseh
 """
+from util import*
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
@@ -23,31 +24,42 @@ def rf_param():
     rf_param =  {
         'max_depth':                5,
         'max_features':             9,
-        'n_estimators':             1000,
-        #'criterion':               hp.choice('criterion', ["gini", "entropy"]),
+        'n_estimators':             643,
+        'min_samples_leaf':         1,
+        'min_samples_split':        6,
         'random_state' :            0,
        }
     return rf_param
 
-for label in ['Y13', 'Y15']:
+label = 'Y16'
+result = []
+method = 'rf'
+nfold = 10
+random_states = [0]
+for seeds in random_states:
     # user
+    #trials = load_obj(label+'_residual_'+method)
+    #trials = sorted(trials, key=lambda k: k['loss'])
+    #param = trials[0]['params']
     param = rf_param()
-    if label == 'Y15': param['max_depth'] = 2
-    method = 'rf'
-    nfold = 0
+    param['random_state']=seeds
+    # param['max_depth'] = 2
     
-    train = pd.read_csv('data_pre/train_2.csv')
-    train = train.values
+    train, train_label = load_dataset_v2('train2',12, 20, True)
+    del train['time']
+    
     data = []
     data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
     data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
     data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
     
-    Y18 = np.load('data_pre/Y18.npy')
-    data = np.mean(data,axis=0)
+    data = np.mean(data, axis=0)
+    train_label = train_label.values - data
+    train = train.values
     
-    train_label = Y18 - data
-    test = pd.read_csv('data_pre/test.csv')
+    test = load_dataset_v2('test',12, 20, True)
+    del test['time']
+    test = test.values
     
     val = np.zeros((432))
     preds = []
@@ -98,36 +110,53 @@ for label in ['Y13', 'Y15']:
             # test
             test_pred = model.predict(test)
             preds.append(test_pred)
-
+    result.append(np.mean(preds,axis=0))
+    
 #%% 3일치 결과
 plt.plot(val)
 plt.plot(train_label)
 
 #%% 최종 예측
-res = np.mean(preds,axis=0)
 svr = np.load('data_pre/'+label+'_pred_80day_svr.npy')
 lgb = np.load('data_pre/'+label+'_pred_80day_lgb.npy')
 rf = np.load('data_pre/'+label+'_pred_80day_rf.npy')
-ref = pd.read_csv('submit/sample_submission_v40.csv')
-ref = ref.Y18.values
 
 data = [svr, rf, lgb]
 data = np.mean(data, axis=0)
-
-summed = data + np.mean(preds,axis=0)
-np.save('data_pre/Y18_pred_'+label+'.npy',summed)
-
+summed = data + np.mean(result,axis=0)
+ref_prev = pd.read_csv('submit/submit_11.csv')
+ref_prev_bad = pd.read_csv('submit/submit_18.csv')
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+plt.plot(ref.Y18.values)
+plt.plot(ref_prev_bad.Y18.values)
+plt.plot(ref_prev.Y18.values)
+plt.plot(summed)
+plt.plot(y_pred)
+plt.legend(['ref','ref_prev_bad','ref_prev','proposed','ensemble'])
+y_pred = summed * 0.2 + ref.Y18.values * 0.8
+mean_squared_error(ref.Y18.values, y_pred)
+# np.save('pred_1.csv',summed)
 #%% ensemble
 preds = []
-preds.append(np.load('data_pre/Y18_pred_Y13.npy'))
-preds.append(np.load('data_pre/Y18_pred_Y15.npy'))
+preds.append(np.load('pred_1.csv.npy'))
+preds.append(np.load('pred_2.csv.npy'))
+preds.append(ref.Y18.values)
 y_pred = np.dot(np.array([0.5, 0.5]),preds)
+mean_squared_error(ref.Y18.values, y_pred)
 
 #%%
-"""
-ref = pd.read_csv('submit/submit_11.csv')
-ref = pd.read_csv('submit/sample_submission_v40.csv')
-plt.plot(ref.Y18.values[range(1000,2000)])
-plt.plot(y_pred[range(1000,2000)])
+# plt.plot(preds[0])
+# plt.plot(preds[1])
+plt.plot(y_pred)
+plt.plot(ref.Y18.values)
+plt.plot(ref_prev.Y18.values)
+plt.plot(ref_bad.Y18.values)
+plt.legend(['pred','ref','ref_prev','ref_bad'])
+
+#%%
+ref = pd.read_csv('submit/sample_submission_v37.csv')
 mean_squared_error(ref.Y18.values, y_pred)
-"""
+
+#%%
+ref['Y18'] = y_pred
+ref.to_csv('submit/submit_19.csv',index=False)

@@ -72,6 +72,11 @@ trials = sorted(trials, key=lambda k: k['loss'])
 trials = load_obj('0330/Y04_lgb') # 0.71
 trials = sorted(trials, key=lambda k: k['loss'])
 
+#%%
+trials = load_obj('0402/Y15_rf')
+trials = load_obj('0402/Y15_lgb')
+trials = load_obj('0402/Y13_svr')
+
 #%% result -- 3일치
 Y16_svr = np.load('data_pre/Y16_pred_3day_svr.npy')
 Y09_svr = np.load('data_pre/Y09_pred_3day_svr.npy')
@@ -481,3 +486,38 @@ plt.plot(tmp.loc[:,'X34_diff'])
 
 #%%
 plt.plot(tmp.loc[:,'X34_diff'])
+
+#%%
+train = pd.read_csv('data_raw/train.csv')
+train = train.iloc[:4752,:]
+# train_label = train.loc[:,'label']
+train = train.loc[:,'id':'X39']
+time = train.id.values % 144
+tmp = pd.read_csv('data_raw/train_X34_diff.csv')
+tmp = tmp.iloc[:4752,:]
+train['X34_diff'] = tmp.iloc[:,1].values
+
+#%% 
+from util import *
+train_1, train_label_1 = load_dataset_v2('train1',12, 20, True)
+train_2,train_label_2 = load_dataset_v2('train2',12, 20, True)
+train = load_dataset_v2('train',12, 20, True)
+test = load_dataset_v2('test',12, 20, True)
+
+
+#%%
+
+plt.plot(train_label_1.loc[:,'Y08':'Y11'].values)
+plt.legend(['1','2','3','4'])
+
+#%%
+plt.figure()
+for label in ['Y01','Y02','Y09','Y15','Y16']:
+    data = []
+    data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
+    data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
+    data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
+    data = np.mean(data, axis=0)
+    plt.plot(data)
+plt.plot(train_label_2.values, linewidth=3)
+plt.legend(['Y01','Y02','Y09','Y15','Y16','Y18'])

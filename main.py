@@ -92,25 +92,11 @@ if __name__ == '__main__':
             if not method is 'svr': param['random_state'] = seeds
             
             # User
-            label = sensor
-            train = pd.read_csv('data_raw/train.csv')
-            train = train.iloc[:4320,:]
-            train_label = train.loc[:,label]
-            train = train.loc[:,'id':'X39']
-            train['time'] = train.id.values % 144
-            tmp = pd.read_csv('data_raw/train_X34_diff.csv')
-            tmp = tmp.iloc[:4320,:]
-            train['X34_diff'] = tmp.iloc[:,1].values
-            
-            
-            N_T = 12
-            N_S = 20
-            train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
-            train = add_profile_v4(train, 'X31',N_T) # 온도
-            train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
-            
+            # load dataset
+            label = args.label
+            train, train_label = load_dataset_v2('train1',12, 20, True)
             train = train.values
-            train_label = train_label.values
+            train_label = train_label[label].values
             
             #============================================= load & pre-processing ==================================================
             

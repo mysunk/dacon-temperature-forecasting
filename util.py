@@ -4,7 +4,7 @@ Created on Sun Mar  1 21:24:21 2020
 
 @author: guseh
 """
-
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 try:
@@ -159,7 +159,9 @@ def save_obj(obj, name):
 
 def load_obj(name):
     with open('results/' + name + '.pkl', 'rb') as f:
-        return pickle.load(f)
+        trials = pickle.load(f)
+        trials = sorted(trials, key=lambda k: k['loss'])
+        return trials
     
 def lgb_eval_function(pred, train):
     diff = abs(pred - train)
@@ -210,3 +212,43 @@ def process_dataset(data):
     data = add_profile_v4(data, 'X31',N_T) # 온도
     data = add_profile_v4(data, 'X34_diff',N_S) # 일사량
     return data
+
+def load_dataset_v2(data_type, N_T, N_S, do_norm):
+    train = pd.read_csv('data_raw/train.csv')
+    train_label = train.loc[:,'Y00':'Y18']
+    train = train.loc[:,'id':'X39']
+    time = train.id.values % 144
+    test = pd.read_csv('data_raw/test.csv')
+    time_test = test.id.values % 144
+    tmp = pd.read_csv('data_raw/train_X34_diff.csv')
+    tmp2 = pd.read_csv('data_raw/test_X34_diff.csv')
+    train['X34_diff'] = tmp.iloc[:,1].values
+    test['X34_diff'] = tmp2.iloc[:,1].values
+    
+    if do_norm:
+        scaler = StandardScaler()
+        train.loc[:,:] = scaler.fit_transform(train.values)
+        test.loc[:,:] = scaler.transform(test.values)
+    
+    train['time'] = time
+    test['time'] = time_test
+    
+    train = pd.concat([train, test],axis=0).reset_index(drop = True)
+    train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+    train = add_profile_v4(train, 'X31',N_T) # 온도
+    train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
+    
+    if data_type == 'train1':
+        train = train.iloc[:4320,:]
+        train_label = train_label.loc[:4320-1,'Y00':'Y17']
+        return train, train_label
+    elif data_type == 'train2':
+        train = train.iloc[4320:4752,:]
+        train_label = train_label.loc[4320:,'Y18']
+        return train, train_label
+    elif data_type == 'test':
+        test = train.iloc[4752:,:]
+        return test
+    elif data_type == 'train':
+        return train.iloc[:4752,:]
+
