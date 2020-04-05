@@ -1,6 +1,6 @@
 #!/bin/sh
-python3 tuning.py --max_evals=300 --save_file=0404/Y16_svr --method=svr --nfold=30 --label=Y16
-python3 tuning.py --max_evals=3000 --save_file=0404/Y16_lgb --method=lgb --nfold=30 --label=Y16
+# python3 tuning.py --max_evals=300 --save_file=0404/Y16_svr --method=svr --nfold=30 --label=Y16
+# python3 tuning.py --max_evals=3000 --save_file=0404/Y16_lgb --method=lgb --nfold=30 --label=Y16
 python3 tuning.py --max_evals=300 --save_file=0404/Y16_rf --method=rf --nfold=30 --label=Y16
 python3 tuning.py --max_evals=300 --save_file=0404/Y09_svr --method=svr --nfold=30 --label=Y09
 python3 tuning.py --max_evals=3000 --save_file=0404/Y09_lgb --method=lgb --nfold=30 --label=Y09
