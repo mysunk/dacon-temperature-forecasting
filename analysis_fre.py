@@ -521,3 +521,60 @@ for label in ['Y01','Y02','Y09','Y15','Y16']:
     plt.plot(data)
 plt.plot(train_label_2.values, linewidth=3)
 plt.legend(['Y01','Y02','Y09','Y15','Y16','Y18'])
+
+
+#%%
+trials = load_obj('0402/Y13_lgb') # 0.77
+trials = load_obj('0402/Y13_rf') # 0.93
+trials = load_obj('0402/Y13_svr') # 0.67
+
+trials = load_obj('0402/Y15_svr') # 0.83
+trials = load_obj('0402/Y15_lgb') # 0.89
+
+
+#%%
+
+tmp1 = np.load('data_pre/Y13_pred_80day_svr.npy')
+tmp2 = np.load('data_pre/Y13_pred_80day_rf.npy')
+tmp3 = np.load('data_pre/Y13_pred_80day_lgb.npy')
+
+plt.plot(tmp1)
+plt.plot(tmp2)
+plt.plot(tmp3)
+
+tmp4 = np.load('predictions/Y13_pred_80day_svr.npy')
+tmp5 = np.load('predictions/Y13_pred_80day_rf.npy')
+tmp6 = np.load('predictions/Y13_pred_80day_lgb.npy')
+
+plt.plot(tmp4)
+plt.plot(tmp5)
+plt.plot(tmp6)
+
+plt.legend(range(6))
+
+#%%
+
+tmp1 = np.load('data_pre/Y15_pred_80day_svr.npy')
+tmp3 = np.load('data_pre/Y15_pred_80day_lgb.npy')
+
+plt.plot(tmp1)
+plt.plot(tmp3)
+
+tmp4 = np.load('predictions/Y13_pred_80day_svr.npy')
+tmp6 = np.load('predictions/Y13_pred_80day_lgb.npy')
+
+plt.plot(tmp4)
+plt.plot(tmp6)
+
+plt.legend(range(6))
+
+#%%
+
+tmp1 = np.load('predictions/Y15_pred_80day_svr.npy')
+tmp2 = np.load('predictions/Y15_pred_80day_lgb.npy')
+tmp3 = np.load('data_pre/Y18.npy')
+
+plt.plot(tmp1)
+plt.plot(tmp2)
+plt.plot(tmp3)
+

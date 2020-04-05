@@ -68,22 +68,22 @@ def svr_param():
 if __name__ == '__main__':
     # load cv result
     # user
-    for sensor in ['Y00','Y01','Y02','Y03','Y04']:
-        # sensor = 'Y01'
+    preds_all_test1 = []
+    preds_all_test2 = []
+    loss_results = []
+    for param_num in range(1):
+        sensor = 'Y15'
         method = 'svr'
-        random_seeds = [0,1,2,3,4,5,6,7,8,9,10]
-        trials = load_obj('0330/'+sensor+'_'+method)
+        save = False
+        random_seeds = list(range(1))
+        trials = load_obj('0402/'+sensor+'_'+method)
         trials = sorted(trials, key=lambda k: k['loss'])
         if np.isnan(trials[0]['loss']): del trials[0]
-        param_num = 0
+        # param_num = range(5)
         nfold = 30
-        
-        test1_savename = 'data_pre/'+sensor+'_pred_3day_'+method+'.npy'
-        test2_savename = 'data_pre/'+sensor+'_pred_80day_'+method+'.npy'
-        
-        preds_all_test1 = []
-        preds_all_test2 = []
-        loss_results = []
+        test1_savename = 'predictions/'+sensor+'_pred_3day_'+method+'.npy'
+        test2_savename = 'predictions/'+sensor+'_pred_80day_'+method+'.npy'
+
         
         for seeds in random_seeds:
             
@@ -93,10 +93,13 @@ if __name__ == '__main__':
             
             # User
             # load dataset
-            label = args.label
+            label = sensor
             train, train_label = load_dataset_v2('train1',12, 20, True)
             train = train.values
             train_label = train_label[label].values
+            
+            test1, _ = load_dataset_v2('train2',12, 20, True)
+            test2 = load_dataset_v2('test',12, 20, True)
             
             #============================================= load & pre-processing ==================================================
             
@@ -153,10 +156,14 @@ if __name__ == '__main__':
             loss_results.append(losses)
             preds_all_test1.append(y_pred_test1)
             preds_all_test2.append(y_pred_test2)
-            if method == 'svr': break # 한 번만 돌리고 멈춤
-        y_pred_test1 = np.mean(preds_all_test1,axis=0)
-        y_pred_test2 = np.mean(preds_all_test2,axis=0)
+        
+    y_pred_test1 = np.mean(preds_all_test1,axis=0)
+    y_pred_test2 = np.mean(preds_all_test2,axis=0)
+    if save:
         np.save(test1_savename,y_pred_test1)
         np.save(test2_savename,y_pred_test2)
-        
-        
+    
+#%%
+plt.plot(preds_all_test2[0])
+plt.plot(preds_all_test2[1])
+plt.plot(preds_all_test2[2])

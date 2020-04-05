@@ -22,7 +22,7 @@ from sklearn.multioutput import MultiOutputRegressor
 
 def rf_param():
     rf_param =  {
-        'max_depth':                5,
+        'max_depth':                10,
         'max_features':             9,
         'n_estimators':             643,
         'min_samples_leaf':         1,
@@ -31,27 +31,27 @@ def rf_param():
        }
     return rf_param
 
-label = 'Y16'
+label = 'Y15'
 result = []
 method = 'rf'
-nfold = 10
-random_states = [0]
+nfold = 0
+random_states = range(10)
 for seeds in random_states:
     # user
-    #trials = load_obj(label+'_residual_'+method)
-    #trials = sorted(trials, key=lambda k: k['loss'])
-    #param = trials[0]['params']
-    param = rf_param()
-    param['random_state']=seeds
-    # param['max_depth'] = 2
+    trials = load_obj('tmp_2')
+    trials = sorted(trials, key=lambda k: k['loss'])
+    param = trials[0]['params']
+    # param = rf_param()
+    # param['random_state']=seeds
+    param['max_depth'] = 9
     
     train, train_label = load_dataset_v2('train2',12, 20, True)
     del train['time']
     
     data = []
-    data.append(np.load('data_pre/'+label+'_pred_3day_svr.npy'))
-    data.append(np.load('data_pre/'+label+'_pred_3day_rf.npy'))
-    data.append(np.load('data_pre/'+label+'_pred_3day_lgb.npy'))
+    # data.append(np.load('predictions/'+label+'_pred_3day_svr.npy'))
+    #data.append(np.load('predictions/'+label+'_pred_3day_rf.npy'))
+    data.append(np.load('predictions/'+label+'_pred_3day_lgb.npy'))
     
     data = np.mean(data, axis=0)
     train_label = train_label.values - data
@@ -112,29 +112,32 @@ for seeds in random_states:
             preds.append(test_pred)
     result.append(np.mean(preds,axis=0))
     
+np.save('predictions/'+label+'_residual_80day.npy',np.mean(result, axis=0))
+    
 #%% 3일치 결과
 plt.plot(val)
 plt.plot(train_label)
 
+plt.plot(result[0])
 #%% 최종 예측
-svr = np.load('data_pre/'+label+'_pred_80day_svr.npy')
-lgb = np.load('data_pre/'+label+'_pred_80day_lgb.npy')
-rf = np.load('data_pre/'+label+'_pred_80day_rf.npy')
+# svr = np.load('predictions/'+label+'_pred_80day_svr.npy')
+lgb = np.load('predictions/'+label+'_pred_80day_lgb.npy')
+# rf = np.load('data_pre/'+label+'_pred_80day_rf.npy')
 
-data = [svr, rf, lgb]
-data = np.mean(data, axis=0)
+# data = np.mean([svr, lgb, rf],axis=0)
+data = lgb
 summed = data + np.mean(result,axis=0)
 ref_prev = pd.read_csv('submit/submit_11.csv')
-ref_prev_bad = pd.read_csv('submit/submit_18.csv')
+# ref_prev_bad = pd.read_csv('submit/submit_18.csv')
 ref = pd.read_csv('submit/sample_submission_v40.csv')
 plt.plot(ref.Y18.values)
-plt.plot(ref_prev_bad.Y18.values)
+# plt.plot(ref_prev_bad.Y18.values)
 plt.plot(ref_prev.Y18.values)
 plt.plot(summed)
-plt.plot(y_pred)
-plt.legend(['ref','ref_prev_bad','ref_prev','proposed','ensemble'])
+# plt.plot(y_pred)
+plt.legend(['ref','ref_prev','proposed'])
 y_pred = summed * 0.2 + ref.Y18.values * 0.8
-mean_squared_error(ref.Y18.values, y_pred)
+mean_squared_error(ref.Y18.values, summed)
 # np.save('pred_1.csv',summed)
 #%% ensemble
 preds = []
@@ -154,9 +157,39 @@ plt.plot(ref_bad.Y18.values)
 plt.legend(['pred','ref','ref_prev','ref_bad'])
 
 #%%
-ref = pd.read_csv('submit/sample_submission_v37.csv')
+ref = pd.read_csv('submit/sample_submission_v40.csv')
 mean_squared_error(ref.Y18.values, y_pred)
 
 #%%
 ref['Y18'] = y_pred
 ref.to_csv('submit/submit_19.csv',index=False)
+
+#%%
+data1 = np.load('predictions/Y13_pred_80day_lgb.npy')
+data2 = np.load('predictions/Y15_pred_80day_lgb.npy')
+residual1 = np.load('predictions/Y13_residual_80day.npy')
+residual2 = np.load('predictions/Y15_residual_80day.npy')
+
+ref_prev = pd.read_csv('submit/submit_11.csv')
+
+# plt.plot(data1+residual1)
+plt.plot(data2+residual2)
+plt.plot(ref.Y18.values)
+plt.plot(ref_prev.Y18.values)
+plt.plot( (data1+residual1) * (0.3) + (data2+residual2) *(0.7))
+plt.legend(['Y15','ref','ref_prev','ensemble'])
+
+for i in range(10):
+    y_pred = (data1+residual1) * (0.1*i) + (data2+residual2) *(1-0.1*i)
+    print(mean_squared_error(ref.Y18.values, y_pred))
+
+#%%
+plt.plot( np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[0])
+plt.plot( np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[1])
+plt.plot( np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[2])
+plt.plot( np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[3])
+plt.plot( np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[4])
+plt.plot(ref.Y18.values)
+plt.legend(['0','1','2','3','4','ref'])
+
+mean_squared_error(ref.Y18.values, np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[8])
