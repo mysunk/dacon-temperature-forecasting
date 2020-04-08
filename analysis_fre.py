@@ -36,6 +36,8 @@ param_sequence = [19]
 trials = load_obj('0329/Y13_rf') # 0.75
 param_sequence = [30]
 
+#%%
+trials = load_obj('0329/Y12_lgb')
 #%% 0330 results
 trials = load_obj('0330/Y00_rf') # 0.05
 trials = sorted(trials, key=lambda k: k['loss'])
@@ -578,3 +580,35 @@ plt.plot(tmp1)
 plt.plot(tmp2)
 plt.plot(tmp3)
 
+#%%
+
+trials = load_obj('0402/Y15_lgb') # 0.89
+trials = load_obj('0402/Y15_svr') # 0.83
+trials = load_obj('0402/Y15_rf') # 1.15
+
+trials = load_obj('0404/Y01_lgb') # 0.84
+trials = load_obj('0404/Y01_svr') # 0.96
+trials = load_obj('0404/Y01_rf') # 1.04
+
+trials = load_obj('0404/Y02_lgb') # 0.92
+trials = load_obj('0404/Y02_svr') # 1.05
+trials = load_obj('0404/Y02_rf') # 1.08
+
+trials = load_obj('0404/Y16_lgb') # 1.49
+trials = load_obj('0404/Y16_svr') 
+trials = load_obj('0404/Y16_rf') 
+
+#%%
+Y01 = np.load('predictions/Y01_pred_3day_lgb.npy')
+Y02 = np.load('predictions/Y02_pred_3day_lgb.npy')
+Y18 = np.load('data_pre/Y18.npy')
+
+plt.plot(np.array([Y01, Y02, Y18]).T)
+
+#%%
+Y01 = np.load('predictions/Y01_pred_80day_lgb.npy')
+Y02 = np.load('predictions/Y02_pred_80day_lgb.npy')
+plt.plot(np.array([Y01, Y02]).T)
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+
+plt.plot(ref.Y18.values)

@@ -17,22 +17,23 @@ from sklearn.svm import SVR
 
 def lgb_param():
     lgb_param = {
-        'bagging_freq' :            2,
+        'bagging_freq' :            13,
         'boosting' :                'gbdt',
-        'colsample_bynode' :        0.5614113707540148,
-        'colsample_bytree' :        0.5236228311328034,
-        'learning_rate' :           0.11074930666097238,
-       ' max_bin' :                 100,
-        'max_depth' :               10,
-        'min_child_weight' :        4,
-        'min_data_in_leaf' :        30,
-        'num_leaves' :              20,
-        'reg_alpha' :               0.0346297125460458,
-        'reg_lambda':               3.641221146386232,
-        'subsample':                0.891312377550311,
-        'tree_learner':             'feature',
+        'colsample_bynode' :        0.340689944410523,
+        'colsample_bytree' :        0.7597589379552556,
+        'learning_rate' :           0.04329330711902006,
+       ' max_bin' :                 47,
+        'max_depth' :               -1,
+        'min_child_weight' :        25,
+        'min_data_in_leaf' :        53,
+        'num_leaves' :              173,
+        'reg_alpha' :               0.17942844400628155,
+        'reg_lambda':               0.3059871058500314,
+        'subsample':                0.9045116843922111,
+        'tree_learner':             'voting',
         'random_state':             0,
         'n_jobs':                   -1,
+        'min_sum_hessian_in_leaf':  8,
     }
     return lgb_param
 
@@ -72,22 +73,22 @@ if __name__ == '__main__':
     preds_all_test2 = []
     loss_results = []
     for param_num in range(1):
-        sensor = 'Y15'
-        method = 'svr'
-        save = False
-        random_seeds = list(range(1))
-        trials = load_obj('0402/'+sensor+'_'+method)
-        trials = sorted(trials, key=lambda k: k['loss'])
-        if np.isnan(trials[0]['loss']): del trials[0]
+        sensor = 'Y12'
+        method = 'lgb'
+        save = True
+        random_seeds = list(range(10))
+        # trials = load_obj('0408/'+sensor+'_'+method)
+        # trials = sorted(trials, key=lambda k: k['loss'])
+        # if np.isnan(trials[0]['loss']): del trials[0]
         # param_num = range(5)
-        nfold = 30
+        nfold = 10
         test1_savename = 'predictions/'+sensor+'_pred_3day_'+method+'.npy'
         test2_savename = 'predictions/'+sensor+'_pred_80day_'+method+'.npy'
 
-        
         for seeds in random_seeds:
             
-            param = trials[param_num]['params']
+            # param = trials[param_num]['params']
+            param = lgb_param()
             param['metric']='l2'
             if not method is 'svr': param['random_state'] = seeds
             
@@ -106,14 +107,14 @@ if __name__ == '__main__':
             if nfold==0:
                 dtrain = lgb.Dataset(train, label=train_label)
                 model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True,
-                                             early_stopping_rounds=10)
+                                             early_stopping_rounds=10,feval=mse_AIFrenz_lgb)
                 y_pred = model.predict(test)
             else:
                 losses = np.zeros((nfold,2)) # 0:train, 1:val
                 preds_test1 = []
                 preds_test2 = []
                 models = []
-                kf = KFold(n_splits=nfold, random_state=None, shuffle=False)
+                kf = KFold(n_splits=nfold, random_state=None, shuffle=True)
                 for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
                     print(i,'th fold training')
                     # train test split
@@ -133,7 +134,7 @@ if __name__ == '__main__':
                         dtrain = lgb.Dataset(x_train, label=y_train)
                         dvalid = lgb.Dataset(x_test, label=y_test)
                         model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
-                                                 early_stopping_rounds=10)
+                                                 early_stopping_rounds=10,feval=mse_AIFrenz_lgb)
                     elif method == 'svr':
                         if not i: del param['metric']
                         model = SVR(**param)
@@ -167,3 +168,4 @@ if __name__ == '__main__':
 plt.plot(preds_all_test2[0])
 plt.plot(preds_all_test2[1])
 plt.plot(preds_all_test2[2])
+plt.plot(y_pred_test2)

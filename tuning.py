@@ -62,12 +62,12 @@ class Tuning_model(object):
     def lgb_space(self):
         # LightGBM parameters
         self.space = {
-            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.2),
+            'learning_rate':            hp.uniform('learning_rate',    0.001, 0.1),
             'max_depth':                -1,
-            'num_leaves':               hp.quniform('num_leaves',       5, 20, 1), 
+            'num_leaves':               hp.quniform('num_leaves',       5, 300, 1), 
             'min_data_in_leaf':		    hp.quniform('min_data_in_leaf',	50, 300, 1),	# overfitting 안되려면 높은 값
-            'reg_alpha':                hp.uniform('reg_alpha',0.1,0.95),
-            'reg_lambda':               hp.uniform('reg_lambda',0.1, 0.95),
+            'reg_alpha':                hp.uniform('reg_alpha',0,1),
+            'reg_lambda':               hp.uniform('reg_lambda',0, 1),
             'min_child_weight':         hp.quniform('min_child_weight', 1, 30, 1),
             'colsample_bytree':         hp.uniform('colsample_bytree', 0.01, 1.0),
             'colsample_bynode':		    hp.uniform('colsample_bynode',0.01,1.0),
@@ -126,13 +126,27 @@ class Tuning_model(object):
         print('k-fold loss is',cv_results)
         # Dictionary with information for evaluation
         return {'loss': cv_loss, 'params': params, 'status': STATUS_OK}
+    """
+    def lgb_cv(self, params, train_set, nfolds):
+        params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
+                                     'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
+
+        dtrain = lgb.Dataset(train_set[0], label = train_set[1])
+        # cv_results = lgb.cv(params, dtrain, num_boost_round=1000,nfold=nfolds,stratified=False,verbose_eval=True,
+        #                      metrics="l2", early_stopping_rounds=10)
+        cv_results = lgb.cv(params, dtrain, num_boost_round=1000,nfold=nfolds,stratified=False,verbose_eval=True,
+                            feval=mse_AIFrenz_lgb, early_stopping_rounds=10)
+        best_loss = min(cv_results['l2-mean'])
+        # Dictionary with information for evaluation
+        return {'loss': best_loss, 'params': params, 'status': STATUS_OK}
+    """
     def lgb_cv(self, params, train_set, nfolds): # 실제 학습이랑 성능 차이가 너무 심해서..
         params = make_param_int(params, ['max_depth','num_leaves','min_data_in_leaf',
                                      'min_child_weight','bagging_freq','max_bin','min_sum_hessian_in_leaf'])
         train = train_set[0]
         traon_label = train_set[1]
         losses = []
-        kf = KFold(n_splits=nfolds,random_state=None, shuffle=False)
+        kf = KFold(n_splits=nfolds,random_state=None, shuffle=True)
         for i, (train_index, test_index) in enumerate(kf.split(train, train_label)):
             if isinstance(train, (np.ndarray, np.generic) ): # if numpy array
                 x_train = train[train_index]
@@ -147,7 +161,7 @@ class Tuning_model(object):
             dtrain = lgb.Dataset(x_train, label=y_train)
             dvalid = lgb.Dataset(x_test, label=y_test)
             model = lgb.train(params, train_set = dtrain,  
-                              valid_sets=[dtrain, dvalid],num_boost_round=1000,verbose_eval=False,
+                              valid_sets=[dtrain, dvalid],num_boost_round=1000,verbose_eval=True,
                                      early_stopping_rounds=10)
             losses.append(model.best_score['valid_1']['l2'])
         return {'loss': np.mean(losses,axis=0),'params':params ,'status': STATUS_OK}
@@ -157,11 +171,11 @@ if __name__ == '__main__':
     # load config
     parser = argparse.ArgumentParser(description='Dacon temperature regression',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--method', default='rf', choices=['lgb', 'eln', 'rf','svr'])
-    parser.add_argument('--max_evals', default=30,type=int)
-    parser.add_argument('--save_file', default='0402/Y15_rf')
-    parser.add_argument('--nfold', default=30,type=int)
-    parser.add_argument('--label', default='Y15')
+    parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
+    parser.add_argument('--max_evals', default=100,type=int)
+    parser.add_argument('--save_file', default='tmp')
+    parser.add_argument('--nfold', default=10,type=int)
+    parser.add_argument('--label', default='Y12')
     args = parser.parse_args()
     
     # load dataset
@@ -169,6 +183,8 @@ if __name__ == '__main__':
     train, train_label = load_dataset_v2('train1',12, 20, True)
     train = train.values
     train_label = train_label[label].values
+    # _, train_label = load_dataset_v2('train2',12, 20, True)
+    # train_label = np.hstack([np.load('data_pre/Y18_with_Y13.npy'),train_label.values])
     
     # main
     clf = args.method

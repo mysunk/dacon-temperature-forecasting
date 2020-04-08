@@ -224,6 +224,8 @@ def load_dataset_v2(data_type, N_T, N_S, do_norm):
     tmp2 = pd.read_csv('data_raw/test_X34_diff.csv')
     train['X34_diff'] = tmp.iloc[:,1].values
     test['X34_diff'] = tmp2.iloc[:,1].values
+    train['X39_diff'] = irradiance_difference(train.X39.values)
+    test['X39_diff'] = irradiance_difference(test.X39.values)
     
     if do_norm:
         scaler = StandardScaler()
@@ -234,9 +236,10 @@ def load_dataset_v2(data_type, N_T, N_S, do_norm):
     test['time'] = time_test
     
     train = pd.concat([train, test],axis=0).reset_index(drop = True)
-    train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff']]
+    # train = train.loc[:,['time','X00','X07','X30','X31','X34','X34_diff','X39','X39_diff']]
     train = add_profile_v4(train, 'X31',N_T) # 온도
     train = add_profile_v4(train, 'X34_diff',N_S) # 일사량
+    # train = add_profile_v4(train, 'X39_diff',N_R) # 강수량
     
     if data_type == 'train1':
         train = train.iloc[:4320,:]

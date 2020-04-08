@@ -24,29 +24,32 @@ def rf_param():
     rf_param =  {
         'max_depth':                10,
         'max_features':             9,
-        'n_estimators':             643,
+        'n_estimators':             500,
         'min_samples_leaf':         1,
         'min_samples_split':        6,
         'random_state' :            0,
        }
     return rf_param
 
-label = 'Y15'
+label = 'Y12'
 result = []
 method = 'rf'
 nfold = 0
-random_states = range(10)
-for seeds in random_states:
+# random_states = range(3)
+# for depth in range(2,10):
+for seeds in range(10):
     # user
-    trials = load_obj('tmp_2')
-    trials = sorted(trials, key=lambda k: k['loss'])
-    param = trials[0]['params']
-    # param = rf_param()
-    # param['random_state']=seeds
-    param['max_depth'] = 9
+    # trials = load_obj('tmp')
+    # trials = sorted(trials, key=lambda k: k['loss'])
+    # param = trials[0]['params']
+    param = rf_param()
+    param['random_state']=seeds
+    # param['max_depth'] = depth
+    # param['min_samples_split'] = depth
+    
     
     train, train_label = load_dataset_v2('train2',12, 20, True)
-    del train['time']
+    # del train['time']
     
     data = []
     # data.append(np.load('predictions/'+label+'_pred_3day_svr.npy'))
@@ -58,7 +61,6 @@ for seeds in random_states:
     train = train.values
     
     test = load_dataset_v2('test',12, 20, True)
-    del test['time']
     test = test.values
     
     val = np.zeros((432))
@@ -66,7 +68,8 @@ for seeds in random_states:
     if nfold==0:
         if method == 'lgb':
             dtrain = lgb.Dataset(train, label=train_label)
-            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True)
+            model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,early_stopping_rounds=10,
+                              feval=mse_AIFrenz_lgb,verbose_eval=True)
         elif method == 'svr':
             model =MultiOutputRegressor(SVR(**param))
             model.fit(train, train_label)
@@ -90,11 +93,11 @@ for seeds in random_states:
             
             # w.r.t method
             if method == 'lgb':
-                param['metric']='l2'
+                # param['metric']='l2'
                 dtrain = lgb.Dataset(x_train, label=y_train)
                 dvalid = lgb.Dataset(x_test, label=y_test)
                 model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
-                                         early_stopping_rounds=10)
+                                         early_stopping_rounds=10,feval=mse_AIFrenz_lgb)
             elif method == 'svr':
                 model = SVR(**param)
                 model.fit(x_train, y_train)
@@ -112,40 +115,80 @@ for seeds in random_states:
             preds.append(test_pred)
     result.append(np.mean(preds,axis=0))
     
-np.save('predictions/'+label+'_residual_80day.npy',np.mean(result, axis=0))
+# np.save('predictions/'+label+'_residual_80day'+method+'.npy',np.mean(result, axis=0))
     
 #%% 3일치 결과
 plt.plot(val)
 plt.plot(train_label)
 
+# plt.plot(np.array(result).T)
 plt.plot(result[0])
+plt.plot(result[1])
+plt.plot(result[2])
 #%% 최종 예측
-# svr = np.load('predictions/'+label+'_pred_80day_svr.npy')
-lgb = np.load('predictions/'+label+'_pred_80day_lgb.npy')
-# rf = np.load('data_pre/'+label+'_pred_80day_rf.npy')
+Y01 = np.load('predictions/Y01_pred_80day_lgb.npy')
+Y02 = np.load('predictions/Y02_pred_80day_lgb.npy')
 
-# data = np.mean([svr, lgb, rf],axis=0)
-data = lgb
-summed = data + np.mean(result,axis=0)
+Y01_res_lgb = np.load('predictions/Y01_residual_80day_lgb.npy')
+Y02_res = np.load('predictions/Y02_residual_80day.npy')
+
+Y18_01 = Y01 + np.mean(result, axis=0) #Y01_res
+Y18_01_lgb = Y01 + Y01_res_lgb
+Y18_02 = Y02 + Y02_res
+
 ref_prev = pd.read_csv('submit/submit_11.csv')
-# ref_prev_bad = pd.read_csv('submit/submit_18.csv')
+# ref_bad = pd.read_csv('submit/submit_17.csv')
+ref = pd.read_csv('submit/sample_submission_v39.csv')
+plt.plot(ref.Y18.values)
+plt.plot(ref_prev.Y18.values)
+# plt.plot(ref_bad.Y18.values)
+plt.plot(Y18_01)
+plt.plot(Y18_01_lgb)
+# plt.plot(y_pred)
+# plt.plot(Y18_02)
+plt.legend(['ref','ref_prev','proposed1','proposed2'])
+y_pred = Y18_01 * 0.2 + ref.Y18.values * 0.8
+
+#%%
+Y13 = np.load('predictions/Y13_pred_80day_lgb.npy')
+Y15 = np.load('predictions/Y15_pred_80day_lgb.npy')
+# Y18_13 = Y13 + np.mean(result, axis=0)# result[2]# np.mean(result, axis=0) #Y01_res
+Y18_15 = Y15 + result[0]# np.mean(result, axis=0)# result[2]# np.mean(result, axis=0) #Y01_res
+
+ref_prev = pd.read_csv('submit/submit_11.csv')
+ref = pd.read_csv('submit/sample_submission_v40.csv')
+# plt.plot(Y18_15)
+plt.plot(y_pred)
+plt.plot(ref.Y18.values)
+# plt.plot(tmp.Y18.values)
+plt.plot(ref_prev.Y18.values)
+
+#%%
+Y12 = np.load('predictions/Y12_pred_80day_lgb.npy')
+
+Y18_12 = Y12 + np.mean(result, axis=0)# result[0]# np.mean(result, axis=0)# result[2]# np.mean(result, axis=0) #Y01_res
 ref = pd.read_csv('submit/sample_submission_v40.csv')
 plt.plot(ref.Y18.values)
-# plt.plot(ref_prev_bad.Y18.values)
-plt.plot(ref_prev.Y18.values)
-plt.plot(summed)
-# plt.plot(y_pred)
-plt.legend(['ref','ref_prev','proposed'])
-y_pred = summed * 0.2 + ref.Y18.values * 0.8
-mean_squared_error(ref.Y18.values, summed)
-# np.save('pred_1.csv',summed)
+plt.plot(Y18_12)
+#%%
+# print(mean_squared_error(Y02 + np.mean(result, axis=0),ref_prev.Y18.values))
+for i in range(len(result)):
+    print(mean_squared_error(Y12 + result[i],ref.Y18.values))
+    
+#%%
+y_pred = Y18_13 * 0.6 + Y18_15 * 0.4
+for i in range(10):
+    print(mean_squared_error(Y18_15 * 0.1*i + Y18_13 * (1-0.1*i),ref.Y18.values))
+
 #%% ensemble
 preds = []
 preds.append(np.load('pred_1.csv.npy'))
 preds.append(np.load('pred_2.csv.npy'))
 preds.append(ref.Y18.values)
 y_pred = np.dot(np.array([0.5, 0.5]),preds)
-mean_squared_error(ref.Y18.values, y_pred)
+#%%
+interv = range(5000,6000)
+print(mean_squared_error(ref_prev.Y18.values, y_pred))
 
 #%%
 # plt.plot(preds[0])
@@ -159,6 +202,7 @@ plt.legend(['pred','ref','ref_prev','ref_bad'])
 #%%
 ref = pd.read_csv('submit/sample_submission_v40.csv')
 mean_squared_error(ref.Y18.values, y_pred)
+y_pred = Y18_12 * 0.3 + ref.Y18.values * 0.7
 
 #%%
 ref['Y18'] = y_pred
@@ -193,3 +237,15 @@ plt.plot(ref.Y18.values)
 plt.legend(['0','1','2','3','4','ref'])
 
 mean_squared_error(ref.Y18.values, np.load('predictions/'+label+'_pred_80day_lgb.npy')+result[8])
+
+y_pred = (data1+residual1) * (0.3) + (data2+residual2) *(0.7)
+
+#%%
+try_1 = pd.read_csv('submit/submit_22.csv')
+try_2 = pd.read_csv('submit/submit_23.csv')
+ref_1 = pd.read_csv('submit/sample_submission_v40.csv')
+ref_2 = pd.read_csv('submit/sample_submission_v39.csv')
+ref_3 = pd.read_csv('submit/submit_11.csv')
+
+plt.plot(np.array([try_1.Y18.values,try_2.Y18.values,ref_1.Y18.values,ref_2.Y18.values,ref_3.Y18.values]).T)
+plt.legend(['1','2','3','4','5'])
