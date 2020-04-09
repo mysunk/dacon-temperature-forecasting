@@ -110,7 +110,6 @@ class Tuning_model(object):
     def rf_cv(self, params, train_set, nfolds):
         params = make_param_int(params,['max_depth','max_features','n_estimators','min_samples_split','min_samples_leaf'])
         model = RandomForestRegressor(n_jobs=-1, **params)
-        # score= make_scorer(mean_squared_error, greater_is_better=True)
         score= make_scorer(mean_squared_error, greater_is_better=True)
         cv_results = cross_val_score(model, train_set[0], train_set[1], cv=nfolds,n_jobs=-1, verbose=0, scoring=score)
         cv_loss = np.mean(cv_results)

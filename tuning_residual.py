@@ -42,8 +42,8 @@ class Tuning_model(object):
     
     def rf_space(self):
         self.space =  {
-            'max_depth':                hp.quniform('max_iter',1, 30,1),
-            'min_samples_leaf':         hp.quniform('min_samples_leaf', 1,10,1),
+            'max_depth':                hp.quniform('max_iter',2, 30,1),
+            'min_samples_leaf':         hp.quniform('min_samples_leaf', 1,50,1),
             'max_features':             hp.quniform('max_features', 2,39,1),
             'min_samples_split':        hp.quniform('min_samples_split', 1,10,1),
             'n_estimators':             hp.quniform('n_estimators', 100,1000,1),
@@ -171,11 +171,11 @@ if __name__ == '__main__':
     # load config
     parser = argparse.ArgumentParser(description='Dacon temperature regression',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--method', default='lgb', choices=['lgb', 'eln', 'rf','svr'])
-    parser.add_argument('--max_evals', default=1000,type=int)
-    parser.add_argument('--save_file', default='tmp')
+    parser.add_argument('--method', default='rf', choices=['lgb', 'eln', 'rf','svr'])
+    parser.add_argument('--max_evals', default=100,type=int)
+    parser.add_argument('--save_file', default='Y15_residual_2')
     parser.add_argument('--nfold', default=10,type=int)
-    parser.add_argument('--label', default='Y12')
+    parser.add_argument('--label', default='Y15')
     args = parser.parse_args()
     
     label = args.label
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     data.append(np.load('predictions/'+label+'_pred_3day_lgb.npy'))
     
     data = np.mean(data, axis=0)
-    train_label = train_label.values - data
+    train_label = np.ravel(train_label.values - data)
     train = train.values
 
     # main

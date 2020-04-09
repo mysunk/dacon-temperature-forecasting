@@ -72,23 +72,22 @@ if __name__ == '__main__':
     preds_all_test1 = []
     preds_all_test2 = []
     loss_results = []
-    for param_num in range(1):
-        sensor = 'Y12'
+    for param_num in range(5):# Change parameter
+        sensor = 'Y15'
         method = 'lgb'
-        save = True
+        save = False
         random_seeds = list(range(10))
-        # trials = load_obj('0408/'+sensor+'_'+method)
-        # trials = sorted(trials, key=lambda k: k['loss'])
+        trials = load_obj('0409/'+sensor+'_'+method)
         # if np.isnan(trials[0]['loss']): del trials[0]
         # param_num = range(5)
         nfold = 10
         test1_savename = 'predictions/'+sensor+'_pred_3day_'+method+'.npy'
         test2_savename = 'predictions/'+sensor+'_pred_80day_'+method+'.npy'
 
-        for seeds in random_seeds:
+        for seeds in random_seeds:# Change random state
             
-            # param = trials[param_num]['params']
-            param = lgb_param()
+            param = trials[param_num]['params']
+            # param = lgb_param()
             param['metric']='l2'
             if not method is 'svr': param['random_state'] = seeds
             
@@ -107,7 +106,7 @@ if __name__ == '__main__':
             if nfold==0:
                 dtrain = lgb.Dataset(train, label=train_label)
                 model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain], num_boost_round=1000,verbose_eval=True,
-                                             early_stopping_rounds=10,feval=mse_AIFrenz_lgb)
+                                             early_stopping_rounds=10)
                 y_pred = model.predict(test)
             else:
                 losses = np.zeros((nfold,2)) # 0:train, 1:val
@@ -134,7 +133,7 @@ if __name__ == '__main__':
                         dtrain = lgb.Dataset(x_train, label=y_train)
                         dvalid = lgb.Dataset(x_test, label=y_test)
                         model = lgb.train(param, train_set = dtrain,valid_sets = [dtrain, dvalid], num_boost_round=1000,verbose_eval=True,
-                                                 early_stopping_rounds=10,feval=mse_AIFrenz_lgb)
+                                                 early_stopping_rounds=10)
                     elif method == 'svr':
                         if not i: del param['metric']
                         model = SVR(**param)
@@ -165,7 +164,16 @@ if __name__ == '__main__':
         np.save(test2_savename,y_pred_test2)
     
 #%%
-plt.plot(preds_all_test2[0])
-plt.plot(preds_all_test2[1])
-plt.plot(preds_all_test2[2])
-plt.plot(y_pred_test2)
+# plt.plot(preds_all_test2[2])
+# plt.plot(preds_all_test2[4])
+# plt.plot(preds_all_test2[5])
+# # plt.plot(y_pred_test2)
+# #%%
+test1 = []
+for i in index:
+    if i:
+        test1.append(y_pred_test1[i])
+
+#%%
+np.save(test1_savename,np.mean(test1,axis=0))
+np.save(test2_savename,np.mean(test2,axis=0))
