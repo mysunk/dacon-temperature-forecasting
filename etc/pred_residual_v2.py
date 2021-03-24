@@ -113,4 +113,4 @@ y_pred = np.mean(result, axis=0)
 
 _, train_label = load_dataset_v2('train1',12, 20, True)
 train_label = train_label['Y13'].values + y_pred
-np.save('data_pre/Y18_with_Y13.npy',train_label)
+np.save('../data_pre/Y18_with_Y13.npy', train_label)

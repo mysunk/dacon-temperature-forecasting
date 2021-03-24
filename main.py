@@ -73,7 +73,7 @@ if __name__ == '__main__':
     preds_all_test2 = []
     loss_results = []
     for param_num in range(5):# Change parameter
-        sensor = 'Y15'
+        sensor = 'Y17'
         method = 'lgb'
         save = False
         random_seeds = list(range(10))
@@ -162,17 +162,23 @@ if __name__ == '__main__':
     if save:
         np.save(test1_savename,y_pred_test1)
         np.save(test2_savename,y_pred_test2)
-    
+
 #%%
-# plt.plot(preds_all_test2[2])
-# plt.plot(preds_all_test2[4])
-# plt.plot(preds_all_test2[5])
-# # plt.plot(y_pred_test2)
-# #%%
+index = []
+for i in range(len(loss_results)):
+    print(np.mean(loss_results[i][1])<0.35)
+    index.append(np.mean(loss_results[i][1])<0.35)
+
+#%%
 test1 = []
 for i in index:
     if i:
         test1.append(y_pred_test1[i])
+
+test2 = []
+for i in index:
+    if i:
+        test2.append(y_pred_test2[i])
 
 #%%
 np.save(test1_savename,np.mean(test1,axis=0))

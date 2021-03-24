@@ -46,7 +46,7 @@ plot_features(train_2, ['X00','X07','X28','X31','X32'], range(3))
 plot_features(train_label_2, train_label_1.columns[1:10], range(5))
 
 #%%
-test = pd.read_csv('data_raw/test.csv')
+test = pd.read_csv('../data_raw/test.csv')
 plt.plot(irradiance_difference(test['X11'].values))
 
 
@@ -134,7 +134,7 @@ corr = np.corrcoef(np.vstack([np.ravel(train_label_1_ref.Y16.values), train_1.lo
 corr = np.corrcoef(np.vstack([np.ravel(train_label_1_ref.Y16.values), train_1.loc[:,'X11'].values]))
 
 #%%
-ref = pd.read_csv('submit/sample_submission_v22.csv')
+ref = pd.read_csv('../submit/sample_submission_v22.csv')
 mse_AIFrenz(ref.Y18.values, y_pred)
 
 #%%
@@ -145,7 +145,7 @@ plt.plot(submit_3.Y18.values[interv])
 plt.plot(test.X00.values[interv])
 plt.legend(['sw','ensemble','prev_submit','X00'])
 #%% 과거 제출값
-submit_3 = pd.read_csv('submit/submit_3.csv')
+submit_3 = pd.read_csv('../submit/submit_3.csv')
 submit_3.Y18 = trial
 submit_3.to_csv('submit/submit_4.csv',index=False)
 #%%
@@ -180,8 +180,8 @@ from util import *
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ref = pd.read_csv('submit/sample_submission_v26.csv')
-test = pd.read_csv('data_raw/test.csv')
+ref = pd.read_csv('../submit/sample_submission_v26.csv')
+test = pd.read_csv('../data_raw/test.csv')
 
 interv = range(300)
 plt.plot(ref.Y18.values[interv])
@@ -192,7 +192,7 @@ plt.legend(['sw','T','S','H'])
 
 #%% 3일치
 Y18 = pd.read_csv('data_npy/Y_18.csv')
-train = pd.read_csv('data_raw/train.csv')
+train = pd.read_csv('../data_raw/train.csv')
 train = train.loc[:,'id':'X39']
 interv = range(30*144,33*144)
 plt.plot(Y18.Y18.values[interv])
@@ -397,7 +397,7 @@ Y18_sw = pd.read_csv('data_npy/Y_18_1.csv')
 tmp = pd.read_csv('data_npy/Y_18_2.csv')
 Y18_sw['Y18_2'] = tmp.Y18.values
 #%%
-ref = pd.read_csv('submit/sample_submission_v26.csv')
+ref = pd.read_csv('../submit/sample_submission_v26.csv')
 mse_AIFrenz(ref.Y18.values, y_pred_1)
 mean_squared_error(ref.Y18.values, y_pred_1)
 y_pred = np.mean(preds,axis=0)
@@ -527,15 +527,15 @@ import matplotlib.pyplot as plt
 Y15_pred = np.load('data_npy/Y15_pred_80day.npy')
 Y16_pred = np.load('data_npy/Y16_pred_80day.npy')
 
-Y15_res = pd.read_csv('matlab/res_15.csv',header=None)
-Y16_res = pd.read_csv('matlab/res_16.csv',header=None)
+Y15_res = pd.read_csv('../matlab/res_15.csv', header=None)
+Y16_res = pd.read_csv('../matlab/res_16.csv', header=None)
 
 Y15_res = np.ravel(Y15_res.values)
 Y16_res = np.ravel(Y16_res.values)
 
 Y18_pred = (Y15_pred + 1.7) * 0.5 + (Y16_pred + 1.7) * 0.5
 
-ref = pd.read_csv('submit/sample_submission_v33.csv')
+ref = pd.read_csv('../submit/sample_submission_v33.csv')
 
 
 mse_AIFrenz(Y18_pred,ref.Y18.values)
@@ -548,7 +548,7 @@ plt.plot(ref.Y18.values[interv])
 plt.legend(['now','sw','ms_prev'])
 
 #%%
-ref_ms = pd.read_csv('submit/submit_5.csv')
+ref_ms = pd.read_csv('../submit/submit_5.csv')
 
 #%%
 ref.Y18 = Y18_pred
